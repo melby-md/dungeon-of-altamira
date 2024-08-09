@@ -43,7 +43,7 @@ typedef struct {
 
 struct Entity {
 	bool used;
-	string name;
+	str name;
 	int x, y;
 	int hp;
 	int maxHp;

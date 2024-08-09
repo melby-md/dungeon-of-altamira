@@ -33,15 +33,15 @@ alloc(Arena *a, size length, size align)
     return p;
 }
 
-string
-StringDup(Arena *a, string src)
+str
+StringDup(Arena *a, str src)
 {
-	string str;
+	str dst;
 
-	str.length = src.length;
-	str.data = AllocArray(a, unsigned char, str.length);
+	dst.length = src.length;
+	dst.data = AllocArray(a, unsigned char, dst.length);
 
-	memcpy(str.data, src.data, str.length);
+	memcpy(dst.data, src.data, dst.length);
 
-	return str;
+	return dst;
 }

@@ -38,6 +38,6 @@ SDL_Rect TileTranslate(Graphics *, float x, float y);
 void PollControls(Graphics *);
 void Exit(Platform *);
 Platform *InitPlatform(void);
-void WriteText(Graphics *, string, int, int);
+void WriteText(Graphics *, str, int, int);
 void Render(Platform *, GameState *);
 #endif

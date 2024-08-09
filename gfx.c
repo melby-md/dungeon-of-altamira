@@ -17,7 +17,7 @@ Exit(Platform *p)
 }
 
 void
-WriteText(Graphics *g, string txt, int x, int y)
+WriteText(Graphics *g, str txt, int x, int y)
 {
 	int j = 0;
 	for (int i = 0; i < txt.length; i++) {
@@ -90,8 +90,8 @@ LoadImage(Graphics *g, const char *filename)
 
 	SDL_Texture *texture = SDL_CreateTextureFromSurface(g->renderer, surface);
 
-	SDL_FreeSurface(surface);
-	stbi_image_free(data);
+	//SDL_FreeSurface(surface);
+	//stbi_image_free(data);
 
 	return texture;
 }
@@ -240,7 +240,7 @@ Render(Platform *platform, GameState *dungeon)
 		SDL_RenderFillRect(platform->graphics.renderer, &r2);
 	}
 
-	string text = s("Nome: ");
+	str text = str("Nome: ");
 	WriteText(&platform->graphics, text, 0, platform->graphics.height - platform->graphics.fontHeight);
 	WriteText(&platform->graphics, dungeon->player.entity->name, (int)text.length*platform->graphics.fontWidth, platform->graphics.height - platform->graphics.fontHeight);
 
@@ -296,7 +296,7 @@ InitPlatform(void)
 
 	resize(&p->graphics);
 
-	p->graphics.font = LoadImage(&p->graphics, "font.png");
+	p->graphics.font = LoadImage(&p->graphics, "./font.png");
 	if (p->graphics.font == NULL) {
 		errString = "Coudn't load font sprite";
 		goto error;

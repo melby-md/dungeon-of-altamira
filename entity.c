@@ -32,7 +32,7 @@ DungeonCreate(Arena *arena, GameState *dungeon, int w, int h)
 	dungeon->entityCount = 0;
 	dungeon->player.money = 0;
 	dungeon->player.entity = EntityCreate(dungeon, &(Entity){
-		.name = StringDup(arena, string("João")),
+		.name = StringDup(arena, str("João")),
 		.hp = 10,
 		.maxHp = 10,
 		.sprite = {.id = PLAYER, .animation = STANDING},
