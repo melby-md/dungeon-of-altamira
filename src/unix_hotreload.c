@@ -5,23 +5,21 @@
 #include <sys/stat.h>
 #include <dlfcn.h>
 
-#include "dungeon.h"
+#include "config.h"
+#include "hotreload.h"
 
-static const char *GAME_LIBRARY = "./dungeon.so";
-
-typedef struct {
+typedef struct Code {
 	void *handle;
 	ino_t id;
-	GameApi api;
-	GameState *state;
-	Platform *platform;
-} Game;
+	GameApi *api;
+	Game *state;
+} Code;
 
 const char *__asan_default_options(void)  { return "abort_on_error=1:halt_on_error=1:detect_leaks=0"; }
 const char *__ubsan_default_options(void) { return "abort_on_error=1:halt_on_error=1"; }
 
 static void
-gameLoad(Game *game)
+gameLoad(Code *game)
 {
 	struct stat attr;
 	if ((stat(GAME_LIBRARY, &attr) == 0) && (game->id != attr.st_ino)) {
@@ -32,16 +30,14 @@ gameLoad(Game *game)
 		if (handle) {
 			game->handle = handle;
 			game->id = attr.st_ino;
-			const GameApi *api = dlsym(game->handle, "GAME_API");
-			if (api != NULL) {
-				game->api = *api;
-				if (game->platform == NULL) {
-					game->platform = game->api.init_platform();
-					if (game->platform == NULL)
-						exit(EXIT_FAILURE);
+			game->api = dlsym(game->handle, "GAME_API");
+			if (game->api != NULL) {
+				if (game->state == NULL) {
+					game->state = game->api->init();
+					if (game->state == NULL)
+						exit(1);
 				}
-				if (game->state == NULL)
-					game->state = game->api.init_game(game->platform);
+				Log("Reloaded!");
 			} else {
 				dlclose(game->handle);
 				game->handle = NULL;
@@ -55,10 +51,10 @@ gameLoad(Game *game)
 }
 
 static void
-gameUnload(Game *game)
+gameUnload(Code *game)
 {
 	if (game->handle) {
-		game->api.finalize(game->platform);
+		game->api->finalize(game->state);
 		game->state = NULL;
 		dlclose(game->handle);
 		game->handle = NULL;
@@ -69,24 +65,19 @@ gameUnload(Game *game)
 int
 main(void)
 {
-	Game game = {0};
+	Code game = {0};
 	for (;;) {
 		gameLoad(&game);
 		if (game.handle) {
-			int stat = game.api.step(game.platform, game.state);
-			switch (stat) {
-			case GAME_QUIT:
-				gameUnload(&game);
-				return EXIT_SUCCESS;
-			case GAME_RELOAD:
-				Log("reloading\n");
-				game.state = game.api.init_game(game.platform);
-			}
+			game.api->loop(game.state);
+			if (!game.api->running)
+				break;
 		} else {
 			usleep(10000);
 		}
 	}
 
-	Assert(0 && "This should be unreachable");
+	gameUnload(&game);
+
 	return 0;
 }

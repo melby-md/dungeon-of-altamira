@@ -3,15 +3,13 @@
 
 #include "arena.h"
 
-NORETURN static void
-oom(void)
+NORETURN static void oom(void)
 {
 	Error("Out of memory.");
-	exit(EXIT_FAILURE);
+	exit(70);
 }
 
-Arena
-AllocTempArena(Arena *a)
+Arena AllocTempArena(Arena *a)
 {
     Arena tmp;
     size cap = (a->end - a->beg) / 2;
@@ -20,8 +18,7 @@ AllocTempArena(Arena *a)
     return tmp;
 }
 
-void *
-alloc(Arena *a, size length, size align)
+void *alloc(Arena *a, size length, size align)
 {
     size padding = -(uptr)a->beg & (align - 1);
     size available = a->end - a->beg - padding;
@@ -33,8 +30,7 @@ alloc(Arena *a, size length, size align)
     return p;
 }
 
-str
-StringDup(Arena *a, str src)
+str StringDup(Arena *a, str src)
 {
 	str dst;
 
@@ -44,4 +40,10 @@ StringDup(Arena *a, str src)
 	memcpy(dst.data, src.data, dst.length);
 
 	return dst;
+}
+
+void ArenaInit(Arena *a, u8 *mem, size length)
+{
+	a->beg = mem;
+	a->end = mem + length;
 }

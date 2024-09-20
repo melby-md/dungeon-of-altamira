@@ -1,36 +1,48 @@
 CC = cc -pipe
-CFLAGS = -std=c11 $$(sdl2-config --cflags)
-LD_LIBS = -lm -ldl $$(sdl2-config --libs)
 
-DEBUG_CFLAGS = $(CFLAGS) -Og -g3 -fsanitize=address,undefined \
-	       -fno-omit-frame-pointer
+CPPFLAGS != sdl2-config --cflags
+LDLIBS != sdl2-config --libs
+LDLIBS += -ldl -lm
+
+CFLAGS = -std=c11 -MD -Og -g3 \
+	 -fno-omit-frame-pointer $(WARNINGS)
 
 WARNINGS = -Wall -Wextra -pedantic -Wvla -Wshadow \
 	   -Wconversion -Wdouble-promotion -Wno-sign-conversion \
-	   -Wno-unused-parameter -Werror
+	   -Wno-unused-parameter -Wno-unused-variable -Werror
 
-SRC = dungeon.c gfx.c arena.c entity.c
-HDR = dungeon.h config.h gfx.h arena.h entity.h stb_image.h
+DIR = out
 
-OBJ = $(SRC:.c=.o) stb_image.o
+-include config.mk
 
-all: dungeon_hotreload dungeon.so
+ifdef GL_ES
+	CPPFLAGS += -DGL_ES
+	LDLIBS += -lGLESv2
+else
+	LDLIBS += -lOpenGL
+endif
 
-dungeon_hotreload: unix_hotreload.c dungeon.h config.h
-	$(CC) -o $@ $< $(DEBUG_CFLAGS) $(WARNINGS) $(LD_LIBS)
+OBJ = $(DIR)/arena.o $(DIR)/assets.o $(DIR)/game.o $(DIR)/platform_sdl2.o $(DIR)/renderer_gl.o $(DIR)/image.o
 
-dungeon.so: $(OBJ)
-	$(CC) -o $@ $(OBJ) -shared
+all: $(DIR)/dungeon_hotreload $(DIR)/dungeon.so
 
-.c.o:
-	$(CC) -o $@ $< -fPIC -c $(DEBUG_CFLAGS) $(WARNINGS)
+$(DIR)/dungeon_hotreload: src/unix_hotreload.c | $(DIR)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -D'GAME_LIBRARY="./$(DIR)/dungeon.so"' $(LDFLAGS) -o $@ $< $(LDLIBS)
 
-stb_image.o:
-	$(CC) -o $@ -xc stb_image.h -DSTB_IMAGE_IMPLEMENTATION -fPIC -c $(DEBUG_CFLAGS)  
+$(DIR)/dungeon.so: $(OBJ)
+	$(CC) -shared -o $@ $(OBJ)
 
-$(OBJ): $(HDR)
+$(DIR)/%.o: src/%.c | $(DIR)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -fPIC -c -o $@ $<
+
+$(DIR)/image.o: WARNINGS = 
+
+$(DIR):
+	mkdir -p $@
 
 clean:
-	rm -f dungeon $(OBJ) dungeon.so
+	rm -rf $(DIR)
 
-.PHONY: all clean
+-include $(DIR)/*.d
+
+.PHONY: clean

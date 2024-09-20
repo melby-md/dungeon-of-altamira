@@ -3,7 +3,7 @@
 Entity *
 EntityCreate(GameState *dungeon, Entity *data)
 {
-	Uint8 *tileFlags = &dungeon->tiles[data->x + data->y*dungeon->w].flags;
+	Uint8 *tileFlags = &dungeon->tiles[data->pos.x + data->pos.y*dungeon->w].flags;
 	if (*tileFlags & COLISION)
 		return NULL;
 	*tileFlags |= COLISION;
@@ -13,8 +13,8 @@ EntityCreate(GameState *dungeon, Entity *data)
 	*e = *data;
 
 	e->used = true;
-	e->sprite.x = (float)e->x;
-	e->sprite.y = (float)e->y;
+	e->sprite.x = (float)(e->pos.x * 16);
+	e->sprite.y = (float)(e->pos.y * 16);
 
 	return e;
 }

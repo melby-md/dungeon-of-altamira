@@ -4,18 +4,15 @@
 
 #include "config.h"
 #include "arena.h"
-#include "gfx.h"
+#include "dungeon.h"
 
 typedef struct Entity Entity;
 
-typedef struct {
-	float x0, y0;
-	float x1, y1;
-} Lerp;
-
 typedef enum {
 	PLAYER,
-	MONSTER
+	MONSTER,
+	FLOOR,
+	WALL
 } SpriteId;
 
 /*
@@ -34,17 +31,18 @@ typedef struct {
 
 typedef struct {
 	SpriteId id;
-	float x, y;
+	vec2 pos;
 	enum {
 		STANDING,
 		MOVING
 	} animation;
-	Lerp lerp; } Sprite;
+	vec4 lerp;
+} Sprite;
 
 struct Entity {
 	bool used;
 	str name;
-	int x, y;
+	vec2i pos;
 	int hp;
 	int maxHp;
 	Sprite sprite;
@@ -64,11 +62,6 @@ typedef struct {
 	//Action nextAction;
 } PlayerData;
 
-enum { // Tile sprites
-	FLOOR,
-	WALL
-};
-
 enum { // Tile flags
 	COLISION = 1 << 0,
 	FOV	 = 1 << 1,
@@ -81,7 +74,7 @@ typedef struct {
 	Uint8 flags;
 } Tile;
 
-struct GameState {
+typedef struct Dungeon {
 	PlayerData player;
 
 	int w, h;
@@ -90,8 +83,8 @@ struct GameState {
 	int entityCount;
 	Entity entities[512];
 
-	Uint32 lastUpdate;
-};
+	s32 lastUpdate;
+} Dungeon;
 
 void DungeonCreate(Arena *, GameState *, int, int);
 Entity *EntityCreate(GameState *, Entity *);
