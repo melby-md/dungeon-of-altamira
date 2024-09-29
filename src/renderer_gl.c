@@ -1,12 +1,12 @@
 #include <assert.h> // static_assert
 #include <stdio.h>
 
+#include "image.h"
 #include "config.h"
 #include "platform.h"
 #include "renderer.h"
 #include "renderer_gl.h"
 #include "assets.h"
-#include "../third-party/stb_image.h"
 
 #ifdef GL_ES
 #  include <GLES3/gl3.h>
@@ -217,15 +217,15 @@ void RendererInit(Renderer *renderer)
 
 	str file = AssetRead(ASSET_SPRITESHEET);
 
-	int height, width, nrChannels;
-	unsigned char *data = stbi_load_from_memory(file.data, (int)file.length, &width, &height, &nrChannels, 4);
+	int height, width;
+	unsigned char *data = ImageDecode(file.data, (int)file.length, &width, &height, 4);
 	if (data == NULL) {
 		Error("File");
 		Exit(1);
 	}
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-	stbi_image_free(data);
+	ImageFree(data);
 
 	u32 buffers[2], vbo, ebo, vao;
 	glGenVertexArrays(1, &vao);

@@ -1,3 +1,4 @@
+#include "image.h"
 #include "config.h"
 #include "SDL.h"
 
@@ -13,3 +14,14 @@
 #define STBI_ONLY_PNG
 
 #include "../third-party/stb_image.h"
+
+unsigned char *ImageDecode(const unsigned char *data, int length, int *width, int *height, int channels)
+{
+	int nr_channels;
+	return stbi_load_from_memory(data, length, width, height, &nr_channels, channels);
+}
+
+void ImageFree(void *ptr)
+{
+	stbi_image_free(ptr);
+}
