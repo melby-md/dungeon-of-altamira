@@ -61,7 +61,7 @@ static_assert(sizeof(GLfloat) == sizeof(float));
 static u32 createShader(str src, GLenum type)
 {
 	u32 shader = glCreateShader(type);
-	glShaderSource(shader, 2, (const char *const *)&src.data, (s32 *)&src.length);
+	glShaderSource(shader, 1, (const char *const *)&src.data, (s32 *)&src.length);
 	glCompileShader(shader);
 
 	s32 ok;
