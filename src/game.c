@@ -20,15 +20,10 @@ enum sprites {
 };
 
 enum assets {
-	ASSET_SPRITE_VERTEX_SHADER,
-	ASSET_SPRITE_FRAGMENT_SHADER,
-
 	ASSET_SPRITESHEET
 };
 
 const char *AssetFileName[] = {
-	[ASSET_SPRITE_VERTEX_SHADER] = "assets/main.vert",
-	[ASSET_SPRITE_FRAGMENT_SHADER] = "assets/main.frag",
 	[ASSET_SPRITESHEET] = "assets/spritesheet.png"
 };
 
@@ -73,6 +68,7 @@ GameState *InitGame(u8 *memory, size memorySize, Renderer *renderer)
 
 	RendererSetClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	CameraResize(renderer, 512.0f, 512.0f);
+	SpritesheetLoad(renderer, ASSET_SPRITESHEET);
 
 	return state;
 }

@@ -21,13 +21,6 @@
 
 #define LOG_SIZE 1024
 
-enum assets {
-	ASSET_SPRITE_VERTEX_SHADER,
-	ASSET_SPRITE_FRAGMENT_SHADER,
-
-	ASSET_SPRITESHEET
-};
-
 static const char vertex_src[] = SHADER(
 	layout (location = 0) in vec2 pos;
 	layout (location = 1) in vec2 uv;
@@ -184,6 +177,30 @@ void RendererEnableDebugLogs(void)
 }
 #endif
 
+void SpritesheetLoad(Renderer *renderer, int asset)
+{
+	u32 texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	str file = AssetRead(asset);
+
+	int height, width;
+	unsigned char *data = ImageDecode(file.data, (int)file.length, &width, &height, 4);
+	if (data == NULL) {
+		Error("File");
+		Exit(1);
+	}
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	ImageFree(data);
+}
+
 void RendererSetClearColor(float r, float g, float b, float a)
 {
 	glClearColor(r, g, b, a);
@@ -205,27 +222,6 @@ void RendererInit(Renderer *renderer)
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	u32 texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	str file = AssetRead(ASSET_SPRITESHEET);
-
-	int height, width;
-	unsigned char *data = ImageDecode(file.data, (int)file.length, &width, &height, 4);
-	if (data == NULL) {
-		Error("File");
-		Exit(1);
-	}
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-	ImageFree(data);
 
 	u32 buffers[2], vbo, ebo, vao;
 	glGenVertexArrays(1, &vao);
