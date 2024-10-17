@@ -56,7 +56,7 @@ void Render(GameState *state, Renderer *renderer)
 	DrawQuad(renderer, vec2(100.0f, 100.0f), PAREDE);
 }
 
-GameState *InitGame(u8 *memory, size memorySize, Renderer *renderer)
+GameState *InitGame(char *memory, size memorySize, Renderer *renderer)
 {
 	Arena arena;
 	ArenaInit(&arena, memory, memorySize);

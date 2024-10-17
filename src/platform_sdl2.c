@@ -18,7 +18,7 @@ struct Game {
 	const u8 *keyboard_state;
 
 	GameState *state;
-	u8 memory[];
+	char memory[];
 };
 
 void Finalize(Game *game)

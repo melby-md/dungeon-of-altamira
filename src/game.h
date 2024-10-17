@@ -6,7 +6,7 @@
 
 typedef struct GameState GameState;
 
-GameState *InitGame(u8 *, size, Renderer *renderer);
+GameState *InitGame(char *, size, Renderer *renderer);
 void Update(GameState *, Controls, float);
 void Render(GameState *, Renderer *);
 

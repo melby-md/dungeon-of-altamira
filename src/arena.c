@@ -13,7 +13,7 @@ Arena AllocTempArena(Arena *a)
 {
     Arena tmp;
     size cap = (a->end - a->beg) / 2;
-    tmp.beg  = AllocArray(a, u8, cap);
+    tmp.beg  = AllocArray(a, char, cap);
     tmp.end = tmp.beg + cap;
     return tmp;
 }
@@ -42,7 +42,7 @@ str StringDup(Arena *a, str src)
 	return dst;
 }
 
-void ArenaInit(Arena *a, u8 *mem, size length)
+void ArenaInit(Arena *a, char *mem, size length)
 {
 	a->beg = mem;
 	a->end = mem + length;
