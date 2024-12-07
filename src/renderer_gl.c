@@ -127,25 +127,25 @@ void RendererResize(Renderer *renderer, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
-void DrawQuad(Renderer *renderer, const vec2 pos, float dim, int id)
+void DrawQuad(Renderer *renderer, vec2 pos, float dim, int id)
 {
 	if (renderer->quad_buffer_length >= QUAD_BUFFER_CAPACITY)
 		RendererFlush(renderer);
 
 	s32 length = 4 * renderer->quad_buffer_length++;
 
+	// TODO: Maybe use a LUT?
 	float u = (float)(id & ((1 << TEXTURE_EXP) - 1));
 	float v = (float)(id >> TEXTURE_EXP);
 
 	float w = 1.0f / (float)(1 << TEXTURE_EXP);
 	float h = 1.0f / (float)TEXTURE_H;
 
-	float x1 = pos[0];
-	float y1 = pos[1];
+	float x1 = pos.x;
+	float y1 = pos.y;
 	float x2 = x1 + dim;
 	float y2 = y1 + dim;
 
-	vec2 uv;
 	float u1 = u * w;
 	float v1 = v * h;
 	float u2 = (u + 1.0f) * w;
@@ -188,9 +188,9 @@ void RendererFlush(Renderer *renderer)
 	renderer->quad_buffer_length = 0;
 }
 
-void CameraMove(Renderer *renderer, const vec2 pos) {
-	renderer->transform[12] = -pos[0]*renderer->transform[0];
-	renderer->transform[13] = -pos[1]*renderer->transform[5];
+void CameraMove(Renderer *renderer, vec2 pos) {
+	renderer->transform[12] = -pos.x*renderer->transform[0];
+	renderer->transform[13] = -pos.y*renderer->transform[5];
 }
 
 void CameraResize(Renderer *renderer, float width, float height) {

@@ -8,8 +8,8 @@
 typedef float mat4[16];
 
 typedef struct {
-	vec2 pos;
-	vec2 uv;
+	float pos[2];
+	float uv[2];
 } QuadVertex;
 
 struct Renderer {

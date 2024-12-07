@@ -10,37 +10,30 @@ typedef struct str {
 
 #define str(s) ((str){lengthof(s), (unsigned char *)(s)})
 
-typedef float vec2[2];
+typedef struct {
+	float x, y;
+} vec2;
 
 #define vec2(x, y) ((vec2){(x), (y)})
 
-static inline void vec2_add(vec2 out, const vec2 a, const vec2 b)
+static inline vec2 vec2_add(vec2 a, vec2 b)
 {
-	out[0] = a[0] + b[0];
-	out[1] = a[1] + b[1];
+	return (vec2){a.x + b.x, a.y + b.y};
 }
 
-static inline void vec2_sub(vec2 out, const vec2 a, const vec2 b)
+static inline vec2 vec2_mulf(vec2 v, float f)
 {
-	out[0] = a[0] - b[0];
-	out[1] = a[1] - b[1];
+	return (vec2){v.x * f, v.y * f};
 }
 
-static inline void vec2_mulf(vec2 out, const vec2 v, float f)
+static inline vec2 vec2_divf(vec2 v, float f)
 {
-	out[0] = v[0] * f;
-	out[1] = v[1] * f;
+	return (vec2){v.x / f, v.y / f};
 }
 
-static inline void vec2_divf(vec2 out, const vec2 v, float f)
+static inline float vec2_dot(vec2 a, vec2 b)
 {
-	out[0] = v[0] / f;
-	out[1] = v[1] / f;
-}
-
-static inline float vec2_dot(const vec2 a, const vec2 b)
-{
-	return a[0]*b[0] + a[1]*b[1];
+	return a.x*b.x + a.y*b.y;
 }
 
 #endif

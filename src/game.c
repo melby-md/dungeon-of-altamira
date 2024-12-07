@@ -30,27 +30,26 @@ const char *AssetFileName[] = {
 	[ASSET_SPRITESHEET] = "assets/spritesheet.png"
 };
 
-void Update(GameState *state, Controls controls, float elapsedTime)
+void Update(GameState *state, Controls controls, float dt)
 {
 	vec2 movement = {
 		(float)(controls.right - controls.left),
 		(float)(controls.down - controls.up)
 	};
 
-	if (movement[0] != 0.0f || movement[1] != 0.0f) {
+	if (movement.x != 0.0f || movement.y != 0.0f) {
 
-		vec2_divf(movement, movement, SDL_sqrtf(vec2_dot(movement, movement)));
-		vec2_mulf(movement, movement, elapsedTime * 2.0f);
+		movement = vec2_divf(movement, SDL_sqrtf(vec2_dot(movement, movement)));
+		movement = vec2_mulf(movement, dt * 2.0f);
 
-		vec2_add(state->pos, state->pos, movement);
+		state->pos = vec2_add(state->pos, movement);
 	}
 }
 
 void Render(GameState *state, Renderer *renderer)
 {
 
-	vec2 camera;
-	vec2_add(camera, state->pos, vec2(0.5f, 0.5f));
+	vec2 camera = vec2_add(state->pos, vec2(0.5f, 0.5f));
 	CameraMove(renderer, camera);
 	RendererClear();
 
@@ -67,8 +66,7 @@ GameState *InitGame(char *memory, size memorySize, Renderer *renderer)
 	ArenaInit(&arena, memory, memorySize);
 	GameState *state = Alloc(&arena, GameState);
 
-	state->pos[0] = 0.0f;
-	state->pos[1] = 0.0f;
+	state->pos = vec2(0.0f, 0.0f);
 	state->arena = arena;
 
 	RendererSetClearColor(0.0f, 0.0f, 0.0f, 1.0f);
