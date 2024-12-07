@@ -200,6 +200,8 @@ Game *InitPlatform(void)
 		RendererEnableDebugLogs();
 #endif
 
+	SDL_GL_SetSwapInterval(1);
+
 	resize(game);
 	RendererInit(&game->renderer);
 

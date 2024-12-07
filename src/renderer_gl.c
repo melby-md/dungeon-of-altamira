@@ -1,5 +1,4 @@
-#include <assert.h> // static_assert
-#include <stdio.h>
+#include <stddef.h> // offsetof
 
 #include "image.h"
 #include "config.h"
@@ -21,9 +20,15 @@
 
 #define LOG_SIZE 1024
 
+// TODO: find a better way to do this
+// number of columns = 1 << TEXTURE_EXP
+#define TEXTURE_EXP 2
+// number of rows
+#define TEXTURE_H 1
+
 static const char vertex_src[] = SHADER(
-	layout (location = 0) in vec2 pos;
-	layout (location = 1) in vec2 uv;
+	layout (location = 0) in vec2 a_pos;
+	layout (location = 1) in vec2 a_uv;
 
 	uniform mat4 transform;
 
@@ -31,25 +36,25 @@ static const char vertex_src[] = SHADER(
 
 	void main(void)
 	{
-		v_uv = uv;
-		gl_Position = transform * vec4(pos, 0.0, 1.0);
+		v_uv = a_uv;
+		gl_Position = transform * vec4(a_pos, 0.0, 1.0);
 	}
 );
 
 static const char fragment_src[] = SHADER(
 	precision mediump float;
-	out vec4 FragColor;
+
+	out vec4 f_color;
+
+	in vec2 v_uv;
 
 	uniform sampler2D spritesheet;
-	in vec2 v_uv;
 
 	void main(void)
 	{
-	    FragColor = texture(spritesheet, v_uv);
+	    f_color = texture(spritesheet, v_uv);
 	} 
 );
-
-static_assert(sizeof(GLfloat) == sizeof(float));
 
 static u32 createShader(str src, GLenum type)
 {
@@ -88,6 +93,14 @@ static u32 createProgram(u32 vertex, u32 fragment)
 	return program;
 }
 
+// TODO: Load shader from file and enable hot reloading
+void ReloadShaders(Renderer *renderer) {
+	glUseProgram(0);
+	glDeleteProgram(renderer->program);
+
+	LoadShaders(renderer);
+}
+
 void LoadShaders(Renderer *renderer) {
 	u32 vertex = createShader(str(vertex_src), GL_VERTEX_SHADER);
 	u32 fragment = createShader(str(fragment_src), GL_FRAGMENT_SHADER);
@@ -114,42 +127,65 @@ void RendererResize(Renderer *renderer, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
-void DrawQuad(Renderer *renderer, const vec2 pos, int id)
+void DrawQuad(Renderer *renderer, const vec2 pos, float dim, int id)
 {
-	size length = renderer->buffer_length * 4 * 4;
-
-	float num = 0.25f;
-
-	memcpy(&renderer->quad_buffer[length + 0], pos, sizeof(vec2));
-	memcpy(&renderer->quad_buffer[length + 2], vec2(num * (float)id, 0.0f), sizeof(vec2));
-
-	vec2_add(&renderer->quad_buffer[length + 4], pos, vec2(100.0f, 0.0f));
-	memcpy(&renderer->quad_buffer[length + 6], vec2(num * (float)(id + 1), 0.0f), sizeof(vec2));
-
-	vec2_add(&renderer->quad_buffer[length + 8], pos, vec2(100.0f, 100.0f));
-	memcpy(&renderer->quad_buffer[length + 10], vec2(num * (float)(id + 1), 1.0f), sizeof(vec2));
-
-	vec2_add(&renderer->quad_buffer[length + 12], pos, vec2(0.0f, 100.0f));
-	memcpy(&renderer->quad_buffer[length + 14], vec2(num * (float)id, 1.0f), sizeof(vec2));
-
-	if (++renderer->buffer_length >= BUFFER_CAPACITY)
+	if (renderer->quad_buffer_length >= QUAD_BUFFER_CAPACITY)
 		RendererFlush(renderer);
+
+	s32 length = 4 * renderer->quad_buffer_length++;
+
+	float u = (float)(id & ((1 << TEXTURE_EXP) - 1));
+	float v = (float)(id >> TEXTURE_EXP);
+
+	float w = 1.0f / (float)(1 << TEXTURE_EXP);
+	float h = 1.0f / (float)TEXTURE_H;
+
+	float x1 = pos[0];
+	float y1 = pos[1];
+	float x2 = x1 + dim;
+	float y2 = y1 + dim;
+
+	vec2 uv;
+	float u1 = u * w;
+	float v1 = v * h;
+	float u2 = (u + 1.0f) * w;
+	float v2 = (v + 1.0f) * h;
+
+	renderer->quad_buffer[length + 0] = (QuadVertex){
+		.pos = {x1, y1},
+		.uv  = {u1, v1}
+	};
+
+	renderer->quad_buffer[length + 1] = (QuadVertex){
+		.pos = {x2, y1},
+		.uv  = {u2, v1}
+	};
+
+	renderer->quad_buffer[length + 2] = (QuadVertex){
+		.pos = {x2, y2},
+		.uv  = {u2, v2}
+	};
+
+	renderer->quad_buffer[length + 3] = (QuadVertex){
+		.pos = {x1, y2},
+		.uv  = {u1, v2}
+	};
 }
 
 void RendererFlush(Renderer *renderer)
 {
-	s32 length = renderer->buffer_length;
+	s32 length = renderer->quad_buffer_length;
 	glBufferSubData(
 		GL_ARRAY_BUFFER,
 		0,
-		length * sizeof(float) * 4 * 4,
-		renderer->quad_buffer
+		length * sizeof(QuadVertex) * 4,
+		(void *)renderer->quad_buffer
 	);
 
 	glUniformMatrix4fv(renderer->u_transform, 1, GL_FALSE, renderer->transform);
 	glDrawElements(GL_TRIANGLES, length * 6, GL_UNSIGNED_INT, 0);
 
-	renderer->buffer_length = 0;
+	renderer->quad_buffer_length = 0;
 }
 
 void CameraMove(Renderer *renderer, const vec2 pos) {
@@ -218,10 +254,10 @@ void RendererInit(Renderer *renderer)
 	memset(renderer->transform, 0, sizeof(mat4));
 	renderer->transform[15] = 1.0f;
 
-	LoadShaders(renderer);
-
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	LoadShaders(renderer);
 
 	u32 buffers[2], vbo, ebo, vao;
 	glGenVertexArrays(1, &vao);
@@ -229,9 +265,9 @@ void RendererInit(Renderer *renderer)
 	vbo = buffers[0];
 	ebo = buffers[1];
 
-	u32 indices[BUFFER_CAPACITY * 6];
+	u32 indices[QUAD_BUFFER_CAPACITY * 6];
 
-	for (int i = 0, j = 0; i < BUFFER_CAPACITY * 6; i += 6, j += 4) {
+	for (int i = 0, j = 0; i < QUAD_BUFFER_CAPACITY * 6; i += 6, j += 4) {
 		indices[i + 0] = j + 0;
 		indices[i + 1] = j + 1;
 		indices[i + 2] = j + 3;
@@ -241,20 +277,18 @@ void RendererInit(Renderer *renderer)
 	}
 
 	glBindVertexArray(vao);
+
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); 
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(renderer->quad_buffer), NULL, GL_DYNAMIC_DRAW);
 
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void *)0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(QuadVertex), (void *)(offsetof(QuadVertex, pos)));
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void *)(sizeof(float) * 2));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(QuadVertex), (void *)(offsetof(QuadVertex, uv)));
 	glEnableVertexAttribArray(1);
 
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	renderer->vbo = vbo;
-	renderer->buffer_length = 0;
+	renderer->quad_buffer_length = 0;
 }

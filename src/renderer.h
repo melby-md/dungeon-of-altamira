@@ -6,7 +6,7 @@ typedef struct Renderer Renderer;
 
 void RendererSetClearColor(float, float, float, float);
 void RendererClear(void);
-void DrawQuad(Renderer *, const vec2, int);
+void DrawQuad(Renderer *, const vec2, float, int);
 void SpritesheetLoad(Renderer *, int);
 
 void CameraResize(Renderer *, float, float);

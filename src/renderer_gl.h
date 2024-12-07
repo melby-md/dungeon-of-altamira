@@ -3,22 +3,22 @@
 #include "config.h"
 #include "renderer.h"
 
-#define BUFFER_CAPACITY 256
+#define QUAD_BUFFER_CAPACITY 256
 
 typedef float mat4[16];
 
+typedef struct {
+	vec2 pos;
+	vec2 uv;
+} QuadVertex;
+
 struct Renderer {
-	u32 vbo, program, spritesheet;
+	u32 program;
 	s32 u_transform;
 	mat4 transform;
 
-	int img_width;
-
-	float width, height;
-
-	s32 water_mark;
-	s32 buffer_length;
-	float quad_buffer[BUFFER_CAPACITY * 4 * 4];
+	s32 quad_buffer_length;
+	QuadVertex quad_buffer[QUAD_BUFFER_CAPACITY * 4];
 };
 
 void RendererInit(Renderer *);
@@ -26,5 +26,6 @@ void RendererResize(Renderer *renderer, int, int);
 void RendererEnableDebugLogs(void);
 void RendererFlush(Renderer *);
 void LoadShaders(Renderer *);
+void ReloadShaders(Renderer *);
 
 #endif
