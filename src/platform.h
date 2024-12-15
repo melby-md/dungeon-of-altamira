@@ -6,9 +6,7 @@ typedef struct Controls {
 	vec2 direction;
 } Controls;
 
-void  RequestExit(void);
-void  Exit(int);
-str   ReadEntireFile(const char *);
-//void WriteText(Graphics *, str, int, int);
-//void UpdateCamera(Graphics *, vec2);
+void RequestExit(void);
+void Panic(const char *);
+str  ReadEntireFile(const char *);
 #endif

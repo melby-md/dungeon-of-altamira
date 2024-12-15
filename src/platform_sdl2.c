@@ -28,11 +28,6 @@ void Finalize(Game *game)
 	SDL_Quit();
 }
 
-void Exit(int s)
-{
-	exit(s);
-}
-
 #if 0
 void
 WriteText(Graphics *g, str txt, int x, int y)
@@ -94,23 +89,16 @@ void Loop(Game *game)
 		switch (e.type) {
 
 		case SDL_QUIT:
-			GAME_API.running = false;
+			RequestExit();
 			break;
 
 		case SDL_WINDOWEVENT:
 			if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
 				resize(game);
 			}
-			break;
-		//case SDL_KEYDOWN: 
-			//if (e.key.keysym.sym == SDLK_F5)
-				//LoadShaders(&game->renderer);
 		}
 
 	}
-
-	//if (game->keyboard_state[SDL_SCANCODE_F5])
-	//	InitGame(game->state);
 	
 	u8 up    = game->keyboard_state[SDL_SCANCODE_W] || game->keyboard_state[SDL_SCANCODE_UP];
 	u8 left  = game->keyboard_state[SDL_SCANCODE_A] || game->keyboard_state[SDL_SCANCODE_LEFT];
@@ -136,6 +124,19 @@ void Loop(Game *game)
 	RendererEnd(&game->renderer);
 
 	SDL_GL_SwapWindow(game->window);
+}
+
+NORETURN void Panic(const char *msg)
+{
+	ErrorStr(msg);
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "An error ocurred", msg, NULL);
+	DebugBreak();
+	exit(1);
+}
+
+void RequestExit(void)
+{
+	GAME_API.running = false;
 }
 
 Game *InitPlatform(void)
@@ -165,14 +166,12 @@ Game *InitPlatform(void)
 
 	game = malloc(sizeof(Game) + memorySize);
 
-	if (game == NULL) {
-		errString = "OOM!";
-		goto error;
-	}
+	if (game == NULL)
+		Panic("OOM!");
 	
 	// SDL startup
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
-		goto error;
+		Panic(SDL_GetError());
 
 	Log("Video Driver: %s", SDL_GetCurrentVideoDriver());
 
@@ -186,7 +185,7 @@ Game *InitPlatform(void)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 #endif
 
-	window = SDL_CreateWindow(
+	game->window = SDL_CreateWindow(
 		"Dungeon of Altamira",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
@@ -195,15 +194,16 @@ Game *InitPlatform(void)
 		SDL_WINDOW_OPENGL
 	);
 
-	if (window == NULL)
-		goto error;
+	if (game->window == NULL)
+		Panic(SDL_GetError());
 
 	game->keyboard_state = SDL_GetKeyboardState(&game->keyboard_length);
 
-	game->window = window;
-	game->gl_ctx = SDL_GL_CreateContext(window);
+	game->gl_ctx = SDL_GL_CreateContext(game->window);
 	if (game->gl_ctx == NULL)
-		goto error;
+		Panic(SDL_GetError());
+
+	// Does this output any useful information?
 #if 0
 #ifndef GL_ES
 	if (SDL_GL_ExtensionSupported("GL_KHR_debug"))
@@ -223,16 +223,6 @@ Game *InitPlatform(void)
 	game->state = InitGame(&arena);
 
 	return game;
-
-error:
-	if (errString == NULL)
-		errString = SDL_GetError();
-
-	SDL_ShowSimpleMessageBox(
-		SDL_MESSAGEBOX_ERROR, "An error ocurred", errString, window
-	);
-	ErrorStr(errString);
-	return NULL;
 }
 
 str ReadEntireFile(const char *name)

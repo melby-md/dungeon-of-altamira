@@ -19,7 +19,7 @@
 #  define ErrorStr(str) SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "%s", str)
 #  define Error(...) SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, __VA_ARGS__)
 #  define Log(...)
-#  define Assert(c)
+#  define DebugBreak()
 #else
 #  define DEBUG
 #  define xstr(x) STR(x)
@@ -28,13 +28,15 @@
 #  define Error(...) SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, __FILE__ ":" xstr(__LINE__) ": " __VA_ARGS__)
 #  define Log(...) SDL_Log(__FILE__ ":" xstr(__LINE__) ": " __VA_ARGS__)
 #  if __GNUC__
-#    define Assert(c) if (!(c)) __builtin_trap()
+#    define DebugBreak() __builtin_trap()
 #  elif _MSC_VER
-#    define Assert(c) if (!(c)) __debugbreak()
+#    define DebugBreak() __debugbreak()
 #  else
-#    define Assert(c) if (!(c)) *(volatile int *)0 = 0
+#    define DebugBreak() *(volatile int *)0 = 0
 #  endif
 #endif
+
+#define Assert(c) if (!(c)) DebugBreak()
 
 #define NORETURN _Noreturn
 

@@ -43,8 +43,7 @@ static u32 compileShader(int src, GLenum type)
 	if (!ok) {
 		char infoLog[LOG_SIZE];
 		glGetShaderInfoLog(shader, LOG_SIZE, NULL, infoLog);
-		ErrorStr(infoLog);
-		Exit(1);
+		Panic(infoLog);
 	}
 
 	return shader;
@@ -70,8 +69,7 @@ static u32 createProgram(int vertex_src, int fragment_src)
 	if (!ok) {
 		char infoLog[LOG_SIZE];
 		glGetProgramInfoLog(shader, LOG_SIZE, NULL, infoLog);
-		ErrorStr(infoLog);
-		Exit(1);
+		Panic(infoLog);
 	}
 
 	return shader;
@@ -213,8 +211,7 @@ static u32 LoadTexture(int asset)
 	int height, width;
 	unsigned char *data = ImageDecode(file.data, (int)file.length, &width, &height, 4);
 	if (data == NULL) {
-		Error("File");
-		Exit(1);
+		Panic("File");
 	}
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
@@ -249,8 +246,7 @@ void RendererInit(Renderer *renderer, Arena temp)
 
 	s32 transform = glGetUniformLocation(program, "transform");
 	if (transform == -1) {
-		Error("Shader: no uniform named \"transform\"");
-		Exit(1);
+		Panic("Shader: no uniform named \"transform\"");
 	}
 
 	// Setting up vertex buffers
@@ -354,10 +350,12 @@ void RendererInit(Renderer *renderer, Arena temp)
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		Exit(420);
+		Panic("Error while creating framebuffer");
 
 	glClearColor(0.f, 0.f, 0.f, 1.f);
 	glUseProgram(program);
+
+	Panic("oioioi");
 
 	renderer->spritesheet = spritesheet;
 	renderer->sprite_vao = sprite_vao;
