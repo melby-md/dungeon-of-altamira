@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <stdlib.h> // malloc
 
-#include "config.h"
+#include "common.h"
 #include "game.h"
 #include "hotreload.h"
 #include "platform.h"
@@ -102,9 +102,9 @@ void Loop(Game *game)
 				resize(game);
 			}
 			break;
-		case SDL_KEYDOWN: 
-			if (e.key.keysym.sym == SDLK_F5)
-				LoadShaders(&game->renderer);
+		//case SDL_KEYDOWN: 
+			//if (e.key.keysym.sym == SDLK_F5)
+				//LoadShaders(&game->renderer);
 		}
 
 	}
@@ -112,20 +112,29 @@ void Loop(Game *game)
 	//if (game->keyboard_state[SDL_SCANCODE_F5])
 	//	InitGame(game->state);
 	
-	controls.up    = game->keyboard_state[SDL_SCANCODE_W] || game->keyboard_state[SDL_SCANCODE_UP];
-	controls.left  = game->keyboard_state[SDL_SCANCODE_A] || game->keyboard_state[SDL_SCANCODE_LEFT];
-	controls.down  = game->keyboard_state[SDL_SCANCODE_S] || game->keyboard_state[SDL_SCANCODE_DOWN];
-	controls.right = game->keyboard_state[SDL_SCANCODE_D] || game->keyboard_state[SDL_SCANCODE_RIGHT];
+	u8 up    = game->keyboard_state[SDL_SCANCODE_W] || game->keyboard_state[SDL_SCANCODE_UP];
+	u8 left  = game->keyboard_state[SDL_SCANCODE_A] || game->keyboard_state[SDL_SCANCODE_LEFT];
+	u8 down  = game->keyboard_state[SDL_SCANCODE_S] || game->keyboard_state[SDL_SCANCODE_DOWN];
+	u8 right = game->keyboard_state[SDL_SCANCODE_D] || game->keyboard_state[SDL_SCANCODE_RIGHT];
+
+	vec2 unnormalized = vec2(
+		(float)(right - left),
+		(float)(down - up)
+	);
+
+	if (unnormalized.x != 0.f || unnormalized.y != 0.f)
+		controls.direction = vec2_divf(unnormalized, sqrtf(vec2_dot(unnormalized, unnormalized)));
 
 	u64 current = SDL_GetPerformanceCounter();
-	float elapsedTime = (float)(current - game->lastUpdate) / (float)SDL_GetPerformanceFrequency();
+	float dt = (float)(current - game->lastUpdate) / (float)SDL_GetPerformanceFrequency();
 	game->lastUpdate = current;
 
-	Update(game->state, controls, elapsedTime);
+	Update(game->state, controls, dt);
 
+	RendererBegin(&game->renderer);
 	Render(game->state, &game->renderer);
+	RendererEnd(&game->renderer);
 
-	RendererFlush(&game->renderer);
 	SDL_GL_SwapWindow(game->window);
 }
 
@@ -144,7 +153,7 @@ Game *InitPlatform(void)
 	SDL_GetVersion(&linked);
 
 	Log(
-		"Compiled Against SDL Version: %u.%u.%u.\n",
+		"Compiled Against SDL Version: %u.%u.%u.",
 		compiled.major, compiled.minor, compiled.patch
 	);
 	Log(
@@ -195,18 +204,23 @@ Game *InitPlatform(void)
 	game->gl_ctx = SDL_GL_CreateContext(window);
 	if (game->gl_ctx == NULL)
 		goto error;
+#if 0
 #ifndef GL_ES
 	if (SDL_GL_ExtensionSupported("GL_KHR_debug"))
 		RendererEnableDebugLogs();
 #endif
+#endif
 
 	SDL_GL_SetSwapInterval(1);
 
+	Arena arena;
+	ArenaInit(&arena, game->memory, memorySize);
+
+	RendererInit(&game->renderer, arena);
 	resize(game);
-	RendererInit(&game->renderer);
 
 	game->lastUpdate = SDL_GetPerformanceCounter();
-	game->state = InitGame(game->memory, memorySize, &game->renderer);
+	game->state = InitGame(&arena);
 
 	return game;
 

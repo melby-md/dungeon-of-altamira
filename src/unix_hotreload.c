@@ -5,7 +5,7 @@
 #include <sys/stat.h>
 #include <dlfcn.h>
 
-#include "config.h"
+#include "common.h"
 #include "hotreload.h"
 
 typedef struct Code {

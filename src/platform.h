@@ -1,13 +1,9 @@
 #ifndef _PLATFORM_H
 #define _PLATFORM_H
-#include "config.h"
-#include "types.h"
+#include "common.h"
 
 typedef struct Controls {
-	unsigned up    : 1;
-	unsigned down  : 1;
-	unsigned left  : 1;
-	unsigned right : 1;
+	vec2 direction;
 } Controls;
 
 void  RequestExit(void);

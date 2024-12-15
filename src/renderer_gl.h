@@ -1,9 +1,8 @@
 #ifndef _RENDERER_GL_H
 #define _RENDERER_GL_H
-#include "config.h"
 #include "renderer.h"
 
-#define QUAD_BUFFER_CAPACITY 256
+#define SPRITE_BUFFER_CAPACITY 256
 
 typedef float mat4[16];
 
@@ -13,19 +12,21 @@ typedef struct {
 } QuadVertex;
 
 struct Renderer {
-	u32 program;
+	u32 shader, framebuffer, framebuffer_texture, sprite_vbo, screen_vbo, screen_vao, sprite_vao, spritesheet;
 	s32 u_transform;
 	mat4 transform;
+	mat4 identity;
 
-	s32 quad_buffer_length;
-	QuadVertex quad_buffer[QUAD_BUFFER_CAPACITY * 4];
+	int width, height;
+
+	s32 sprite_buffer_length;
+	QuadVertex sprite_buffer[SPRITE_BUFFER_CAPACITY * 4];
 };
 
-void RendererInit(Renderer *);
+void RendererInit(Renderer *, Arena);
 void RendererResize(Renderer *renderer, int, int);
 void RendererEnableDebugLogs(void);
-void RendererFlush(Renderer *);
-void LoadShaders(Renderer *);
-void ReloadShaders(Renderer *);
+void RendererBegin(Renderer *);
+void RendererEnd(Renderer *);
 
 #endif

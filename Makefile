@@ -4,12 +4,12 @@ CPPFLAGS != sdl2-config --cflags
 LDLIBS != sdl2-config --libs
 LDLIBS += -ldl -lm
 
-CFLAGS = -std=c11 -MD -Og -g3 \
+CFLAGS = -std=c11 -MD -O0 -g3 \
 	 -fno-omit-frame-pointer $(WARNINGS)
 
-WARNINGS = -Wall -Wextra -pedantic -Wvla -Wshadow \
-	   -Wconversion -Wdouble-promotion -Wno-sign-conversion \
-	   -Wno-unused-parameter -Wno-unused-variable -Werror
+WARNINGS = -Wall -Wextra -pedantic -Wvla -Wshadow -Wconversion \
+	   -Wdouble-promotion -Wno-sign-conversion -Wno-unused-parameter \
+	   -Wno-unused-variable -Wno-unused-function -Werror
 
 DIR = out
 

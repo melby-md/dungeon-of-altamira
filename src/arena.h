@@ -1,6 +1,6 @@
 #ifndef _ARENA_H
 #define _ARENA_H
-#include "types.h"
+#include "common.h"
 
 #define AllocArray(arena, type, n) (type *)alloc(arena, sizeof(type) * n, _Alignof(type))
 #define Alloc(arena, type) AllocArray(arena, type, 1)

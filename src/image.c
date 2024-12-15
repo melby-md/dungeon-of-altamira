@@ -1,6 +1,6 @@
 #include "image.h"
-#include "config.h"
 #include "SDL.h"
+#include "common.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 
