@@ -5,8 +5,13 @@
 #include "platform.h"
 #include "arena.h"
 
+typedef struct AABB {
+	vec2 min, max;
+} AABB;
+
 typedef struct Entity {
 	vec2 pos;
+	AABB box;
 } Entity;
 
 struct GameState {
@@ -24,11 +29,58 @@ enum sprites {
 	ZUMBI
 };
 
+AABB translateBox(vec2 pos, AABB box)
+{
+	return (AABB){
+		vec2_add(box.min, pos),
+		vec2_add(box.max, pos)
+	};
+}
+
+bool getTileMapColision(vec2 pos, GameState *state)
+{
+	if (pos.x < 0.f || pos.y < 0.f)
+		return true;
+
+	int x = (int)(pos.x / 16.0f);
+	int y = (int)(pos.y / 16.0f);
+	
+	if (x >= state->dungeon_width)
+		return true;
+
+	if (y >= state->dungeon_height)
+		return true;
+
+	return state->dungeon[y*state->dungeon_height + x] == PAREDE;
+}
+
+bool colisionAgainstTileMap(Entity *e, GameState *state)
+{
+	AABB box = translateBox(e->pos, e->box);
+
+	vec2 points[4] = {
+		{box.min.x, box.min.y},
+		{box.max.x, box.min.y},
+		{box.max.x, box.max.y},
+		{box.min.x, box.max.y}
+	};
+
+	for (int i = 0; i < countof(points); i++) {
+		if (getTileMapColision(points[i], state))
+			return true;
+	}
+
+	return false;
+}
+
 void Update(GameState *state, Controls controls, float dt)
 {
 	if (controls.direction.x != 0.f || controls.direction.y != 0.f) {
 		vec2 movement = vec2_mulf(controls.direction, dt * 18.f);
+		vec2 old = state->player.pos;
 		state->player.pos = vec2_add(state->player.pos, movement);
+		if (colisionAgainstTileMap(&state->player, state))
+			state->player.pos = old;
 	}
 }
 
@@ -50,6 +102,10 @@ GameState *InitGame(Arena *arena)
 {
 	GameState *state = Alloc(arena, GameState);
 	state->player.pos = vec2(0.f, 0.f);
+	state->player.box = (AABB){
+		{3.f, 0.f},
+		{13.f, 16.f}
+	};
 	state->arena = *arena;
 
 	int width = 2, height = 20;

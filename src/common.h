@@ -5,12 +5,13 @@
 #include <stddef.h> // ptrdiff_t
 #include <stdint.h> // *int*_t
 #include <string.h> // memset, memcpy, strlen, etc...
+#include <stdbool.h>
 
 #include "SDL.h"
 
 // macros
 
-#define countof(x) (sizeof(x)/sizeof((x)[0]))
+#define countof(x) (size)(sizeof(x)/sizeof((x)[0]))
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))

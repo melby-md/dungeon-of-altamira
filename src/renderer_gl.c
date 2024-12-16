@@ -355,8 +355,6 @@ void RendererInit(Renderer *renderer, Arena temp)
 	glClearColor(0.f, 0.f, 0.f, 1.f);
 	glUseProgram(program);
 
-	Panic("oioioi");
-
 	renderer->spritesheet = spritesheet;
 	renderer->sprite_vao = sprite_vao;
 	renderer->screen_vao = screen_vao;

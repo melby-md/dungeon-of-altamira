@@ -9,6 +9,5 @@ char *AssetFileName[] = {
 
 str AssetRead(int asset)
 {
-	puts(AssetFileName[asset]);
 	return ReadEntireFile(AssetFileName[asset]);
 }
