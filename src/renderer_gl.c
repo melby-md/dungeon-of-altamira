@@ -105,18 +105,18 @@ static void pushQuad(Renderer *renderer, vec2 pos, int id) {
 	float u = (float)(id & ((1 << SPRITESHEET_COLUMNS_EXP) - 1));
 	float v = (float)(id >> SPRITESHEET_COLUMNS_EXP);
 
-	float w = 1.0f / (float)(1 << SPRITESHEET_COLUMNS_EXP);
-	float h = 1.0f / (float)SPRITESHEET_ROWS;
+	float w = 1.f / (float)(1 << SPRITESHEET_COLUMNS_EXP);
+	float h = 1.f / (float)SPRITESHEET_ROWS;
 
 	float x1 = pos.x;
 	float y1 = pos.y;
-	float x2 = x1 + (float)SPRITE_DIMENSION;
-	float y2 = y1 + (float)SPRITE_DIMENSION;
+	float x2 = x1 + 1.f;
+	float y2 = y1 + 1.f;
 
 	float u1 = u * w;
 	float v1 = v * h;
-	float u2 = (u + 1.0f) * w;
-	float v2 = (v + 1.0f) * h;
+	float u2 = (u + 1.f) * w;
+	float v2 = (v + 1.f) * h;
 
 	quad[0] = (QuadVertex){
 		.pos = {x1, y1},
@@ -214,8 +214,8 @@ void RendererEnd(Renderer *renderer)
 
 void CameraMove(Renderer *renderer, vec2 pos)
 {
-	renderer->transform[12] = -pos.x*renderer->transform[0];
-	renderer->transform[13] = -pos.y*renderer->transform[5];
+	renderer->transform[12] = -(pos.x + .5f)*renderer->transform[0];
+	renderer->transform[13] = -(pos.y + .5f)*renderer->transform[5];
 }
 
 #ifndef GL_ES
@@ -261,9 +261,8 @@ void RendererInit(Renderer *renderer, Arena temp)
 	Log("OpenGL Version: %s", glGetString(GL_VERSION));
 
 	memset(renderer->transform, 0, sizeof(mat4));
-	renderer->transform[0]  =  2.0f / (float)CANVAS_WIDTH;
-	renderer->transform[5]  = -2.0f / (float)CANVAS_HEIGHT;
-	renderer->transform[10] =  0.0f;
+	renderer->transform[0]  =  2.0f / ((float)CANVAS_WIDTH / (float)SPRITE_DIMENSION);
+	renderer->transform[5]  = -2.0f / ((float)CANVAS_HEIGHT / (float)SPRITE_DIMENSION);
 	renderer->transform[15] =  1.0f;
 
 	glEnable(GL_BLEND);

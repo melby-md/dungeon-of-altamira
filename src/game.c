@@ -4,7 +4,6 @@
 #include "renderer.h"
 #include "platform.h"
 #include "arena.h"
-#include "config.h"
 
 typedef struct AABB {
 	vec2 min, max;
@@ -43,8 +42,8 @@ bool getTileMapColision(vec2 pos, GameState *state)
 	if (pos.x < 0.f || pos.y < 0.f)
 		return true;
 
-	int x = (int)(pos.x / (float)SPRITE_DIMENSION);
-	int y = (int)(pos.y / (float)SPRITE_DIMENSION);
+	int x = (int)pos.x;
+	int y = (int)pos.y;
 	
 	if (x >= state->dungeon_width)
 		return true;
@@ -77,7 +76,7 @@ bool colisionAgainstTileMap(Entity *e, GameState *state)
 void Update(GameState *state, Controls controls, float dt)
 {
 	if (controls.direction.x != 0.f || controls.direction.y != 0.f) {
-		vec2 movement = vec2_mulf(controls.direction, dt * 18.f);
+		vec2 movement = vec2_mulf(controls.direction, dt * .8f);
 		vec2 old = state->player.pos;
 		state->player.pos = vec2_add(state->player.pos, movement);
 		if (colisionAgainstTileMap(&state->player, state))
@@ -87,8 +86,7 @@ void Update(GameState *state, Controls controls, float dt)
 
 void Render(GameState *state, Renderer *renderer)
 {
-	vec2 camera = vec2_add(state->player.pos, vec2(8.f, 8.f));
-	CameraMove(renderer, camera);
+	CameraMove(renderer, state->player.pos);
 
 	DrawSprite(renderer, state->player.pos, ZUMBI);
 }
@@ -98,8 +96,8 @@ GameState *InitGame(Arena *arena, Renderer *renderer)
 	GameState *state = Alloc(arena, GameState);
 	state->player.pos = vec2(0.f, 0.f);
 	state->player.box = (AABB){
-		{6.f, 0.f},
-		{26.f, 32.f}
+		{.18f, 0.f},
+		{.81f, 1.f}
 	};
 	state->arena = *arena;
 
@@ -113,7 +111,7 @@ GameState *InitGame(Arena *arena, Renderer *renderer)
 	for (int i = 0; i < state->dungeon_height; i++)
 		for (int j = 0; j < state->dungeon_width; j++) {
 			int id = state->dungeon[i*state->dungeon_width + j];
-			PushTile(renderer, vec2((float)(j*SPRITE_DIMENSION), (float)(i*SPRITE_DIMENSION)), id);
+			PushTile(renderer, vec2((float)j, (float)i), id);
 		}
 	EndStaticTiles(renderer);
 
