@@ -20,6 +20,7 @@ struct Game {
 	u64 lastUpdate;
 	int keyboard_length;
 	const u8 *keyboard_state;
+	bool fullscreen;
 
 	GameState *state;
 	char memory[];
@@ -100,8 +101,16 @@ void Loop(Game *game)
 			if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
 				resize(game);
 			}
+			break;
+		case SDL_KEYDOWN: 
+			if (e.key.keysym.sym == SDLK_F11) {
+				SDL_SetWindowFullscreen(
+					game->window,
+					game->fullscreen ? 0 : SDL_WINDOW_FULLSCREEN_DESKTOP
+				);
+				game->fullscreen = !game->fullscreen;
+			}
 		}
-
 	}
 	
 	u8 up    = game->keyboard_state[SDL_SCANCODE_W] || game->keyboard_state[SDL_SCANCODE_UP];
@@ -172,6 +181,8 @@ Game *InitPlatform(void)
 
 	if (game == NULL)
 		Panic("OOM!");
+
+	game->fullscreen = false;
 	
 	// SDL startup
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -189,13 +200,17 @@ Game *InitPlatform(void)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 #endif
 
+	u32 window_flags = SDL_WINDOW_OPENGL;
+	if (game->fullscreen)
+		window_flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+
 	game->window = SDL_CreateWindow(
 		"Dungeon of Altamira",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
 		width,
 		height,
-		SDL_WINDOW_OPENGL
+		window_flags
 	);
 
 	if (game->window == NULL)
