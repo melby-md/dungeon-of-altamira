@@ -8,6 +8,10 @@
 #include "renderer_gl.h"
 #include "SDL.h"
 
+#ifdef GLAD
+#  include "glad.h"
+#endif
+
 struct Game {
 	SDL_Window *window;
 	SDL_GLContext gl_ctx;
@@ -130,7 +134,7 @@ NORETURN void Panic(const char *msg)
 {
 	ErrorStr(msg);
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "An error ocurred", msg, NULL);
-	DebugBreak();
+	Break();
 	exit(1);
 }
 
@@ -203,6 +207,11 @@ Game *InitPlatform(void)
 	if (game->gl_ctx == NULL)
 		Panic(SDL_GetError());
 
+#ifdef GLAD
+	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
+		Panic("GLAD failure");
+#endif
+
 	// Does this output any useful information?
 #if 0
 #ifndef GL_ES
@@ -211,7 +220,7 @@ Game *InitPlatform(void)
 #endif
 #endif
 
-	SDL_GL_SetSwapInterval(0);
+	SDL_GL_SetSwapInterval(1);
 
 	Arena arena;
 	ArenaInit(&arena, game->memory, memorySize);

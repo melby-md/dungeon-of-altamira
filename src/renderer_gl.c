@@ -9,13 +9,21 @@
 #include "renderer.h"
 #include "renderer_gl.h"
 
-#ifdef GL_ES
-#  include <GLES3/gl3.h>
-char shader_header[] = "#version 300 es\n";
+#ifdef GLAD
+#  include "glad.h"
 #else
-#  define GL_GLEXT_PROTOTYPES
-#  include <GL/gl.h>
+#  ifdef GL_ES
+#    include <GLES3/gl3.h>
+#else
+#    define GL_GLEXT_PROTOTYPES
+#    include <GL/gl.h>
+#  endif
+#endif
+
+#ifdef GL_ES
 char shader_header[] = "#version 330 core\n";
+#else
+char shader_header[] = "#version 300 es\n";
 #endif
 
 #define LOG_SIZE 1024

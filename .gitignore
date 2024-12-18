@@ -1,4 +1,5 @@
 out/
+config.mk
 dungeon
 dungeon_hotreload
 a.out
