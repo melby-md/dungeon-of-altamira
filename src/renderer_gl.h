@@ -20,7 +20,7 @@ struct Renderer {
 	s32 u_transform;
 	mat4 transform;
 
-	int width, height, top, left;
+	int width, height, top, left, right, bottom;
 
 	s32 static_tiles_length;
 	s32 sprite_buffer_length;

@@ -14,7 +14,7 @@
 #else
 #  ifdef GL_ES
 #    include <GLES3/gl3.h>
-#else
+#  else
 #    define GL_GLEXT_PROTOTYPES
 #    include <GL/gl.h>
 #  endif
@@ -178,9 +178,18 @@ void EndStaticTiles(Renderer *renderer)
 
 void RendererResize(Renderer *renderer, int width, int height)
 {
+	// TODO: solve letterbox issues
+	int scale_factor = (width / CANVAS_WIDTH);
+	int letterbox_x = (width % CANVAS_WIDTH)/2;
+	int letterbox_y = (height % CANVAS_HEIGHT)/2;
+
+	renderer->left = letterbox_x;
+	renderer->top = letterbox_y;
+	renderer->right = letterbox_x + CANVAS_WIDTH * scale_factor;
+	renderer->bottom = letterbox_y + CANVAS_HEIGHT * scale_factor;
+
 	renderer->width = width;
 	renderer->height = height;
-	renderer->left = renderer->top = 0;
 }
 
 void RendererBegin(Renderer *renderer)
@@ -207,7 +216,7 @@ void RendererEnd(Renderer *renderer)
 	glClear(GL_COLOR_BUFFER_BIT);
 	glBlitFramebuffer(
 		0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
-		renderer->left, renderer->top, renderer->width, renderer->height,
+		renderer->left, renderer->top, renderer->right, renderer->bottom,
 		GL_COLOR_BUFFER_BIT, GL_NEAREST
 	);
 }
@@ -277,7 +286,7 @@ void RendererInit(Renderer *renderer, Arena temp)
 	}
 
 	// Setting up vertex buffers
-	u32 buffers[3], sprite_vbo,  static_tiles_vbo, ebo;
+	u32 buffers[3], sprite_vbo, static_tiles_vbo, ebo;
 	u32 vaos[2], sprite_vao, static_tiles_vao;
 
 	glGenVertexArrays(countof(vaos), vaos);
