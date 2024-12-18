@@ -37,48 +37,48 @@ AABB translateBox(vec2 pos, AABB box)
 	};
 }
 
-bool getTileMapColision(vec2 pos, GameState *state)
+int realToTilePos(float x)
 {
-	if (pos.x < 0.f || pos.y < 0.f)
-		return true;
-
-	int x = (int)pos.x;
-	int y = (int)pos.y;
-	
-	if (x >= state->dungeon_width)
-		return true;
-
-	if (y >= state->dungeon_height)
-		return true;
-
-	return state->dungeon[y*state->dungeon_height + x] == PAREDE;
+	return (int)x - (x < 0.f ? 1 : 0);
 }
 
 bool colisionAgainstTileMap(Entity *e, GameState *state)
 {
 	AABB box = translateBox(e->pos, e->box);
 
-	vec2 points[4] = {
-		{box.min.x, box.min.y},
-		{box.max.x, box.min.y},
-		{box.max.x, box.max.y},
-		{box.min.x, box.max.y}
-	};
+	int x0 = realToTilePos(box.min.x);
+	int y0 = realToTilePos(box.min.y);
+	int x1 = realToTilePos(box.max.x);
+	int y1 = realToTilePos(box.max.y);
 
-	for (int i = 0; i < countof(points); i++) {
-		if (getTileMapColision(points[i], state))
-			return true;
-	}
+	for (int x = x0; x <= x1; x++)
+		for (int y = y0; y <= y1; y++) {
+			if (x < 0 || x >= state->dungeon_width)
+				return true;
+
+			if (y < 0 || y >= state->dungeon_height)
+				return true;
+
+			if (state->dungeon[y*state->dungeon_height + x] == PAREDE)
+				return true;
+		}
 
 	return false;
 }
 
 void Update(GameState *state, Controls controls, float dt)
 {
+	// TODO: Better collision
 	if (controls.direction.x != 0.f || controls.direction.y != 0.f) {
 		vec2 movement = vec2_mulf(controls.direction, dt * .8f);
+
 		vec2 old = state->player.pos;
-		state->player.pos = vec2_add(state->player.pos, movement);
+		state->player.pos.x += movement.x;
+		if (colisionAgainstTileMap(&state->player, state))
+			state->player.pos = old;
+
+		old = state->player.pos;
+		state->player.pos.y += movement.y;
 		if (colisionAgainstTileMap(&state->player, state))
 			state->player.pos = old;
 	}
