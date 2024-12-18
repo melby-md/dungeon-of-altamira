@@ -142,8 +142,6 @@ void DrawSprite(Renderer *renderer, vec2 pos, int id)
 void BegStaticTiles(Renderer *renderer)
 {
 	Assert(renderer->sprite_buffer_length == 0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, renderer->static_tiles_vbo);
 }
 
 void PushTile(Renderer *renderer, vec2 pos, int id)
@@ -158,7 +156,9 @@ void EndStaticTiles(Renderer *renderer)
 {
 	s32 length = renderer->sprite_buffer_length;
 	renderer->sprite_buffer_length = 0;
-	renderer->static_tiles_length = length;
+	renderer->static_tiles_length = length * 6;
+
+	glBindBuffer(GL_ARRAY_BUFFER, renderer->static_tiles_vbo);
 	glBufferData(
 		GL_ARRAY_BUFFER,
 		sizeof(Quad) * length,
@@ -172,27 +172,19 @@ void RendererResize(Renderer *renderer, int width, int height)
 {
 	renderer->width = width;
 	renderer->height = height;
-
-	/*
-	glBindVertexArray(renderer->screen_vao);
-	glBindBuffer(GL_ARRAY_BUFFER, renderer->screen_vbo);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(v), (void *)v);
-	glBindVertexArray(renderer->sprite_vao);
-	glBindBuffer(GL_ARRAY_BUFFER, renderer->sprite_vbo);
-	*/
+	renderer->left = renderer->top = 0;
 }
 
 void RendererBegin(Renderer *renderer)
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, renderer->framebuffer);
-	glBindTexture(GL_TEXTURE_2D, renderer->spritesheet);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, renderer->framebuffer);
 
 	glViewport(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glUniformMatrix4fv(renderer->u_transform, 1, GL_FALSE, renderer->transform);
 	glBindVertexArray(renderer->static_tiles_vao);
-	glDrawElements(GL_TRIANGLES, renderer->static_tiles_length * 6, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, renderer->static_tiles_length, GL_UNSIGNED_INT, 0);
 
 	glBindVertexArray(renderer->sprite_vao);
 }
@@ -201,15 +193,15 @@ void RendererEnd(Renderer *renderer)
 {
 	RendererFlush(renderer);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glBindVertexArray(renderer->screen_vao);
-	glBindTexture(GL_TEXTURE_2D, renderer->framebuffer_texture);
-
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glViewport(0, 0, renderer->width, renderer->height);
-	glUniformMatrix4fv(renderer->u_transform, 1, GL_FALSE, renderer->identity);
 
 	glClear(GL_COLOR_BUFFER_BIT);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glBlitFramebuffer(
+		0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
+		renderer->left, renderer->top, renderer->width, renderer->height,
+		GL_COLOR_BUFFER_BIT, GL_NEAREST
+	);
 }
 
 void CameraMove(Renderer *renderer, vec2 pos)
@@ -266,12 +258,6 @@ void RendererInit(Renderer *renderer, Arena temp)
 	renderer->transform[10] =  0.0f;
 	renderer->transform[15] =  1.0f;
 
-	memset(renderer->identity, 0, sizeof(mat4));
-	renderer->identity[0]  = 1.0f;
-	renderer->identity[5]  = 1.0f;
-	renderer->identity[10] = 1.0f;
-	renderer->identity[15] = 1.0f;
-
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -284,21 +270,18 @@ void RendererInit(Renderer *renderer, Arena temp)
 	}
 
 	// Setting up vertex buffers
-	u32 buffers[4], sprite_vbo, screen_vbo, static_tiles_vbo, ebo;
-	u32 vaos[3], sprite_vao, screen_vao, static_tiles_vao;
+	u32 buffers[3], sprite_vbo,  static_tiles_vbo, ebo;
+	u32 vaos[2], sprite_vao, static_tiles_vao;
 
-	Log("%lu", countof(vaos));
 	glGenVertexArrays(countof(vaos), vaos);
 	glGenBuffers(countof(buffers), buffers);
 
 	sprite_vao = vaos[0];
-	screen_vao = vaos[1];
-	static_tiles_vao = vaos[2];
+	static_tiles_vao = vaos[1];
 
 	sprite_vbo = buffers[0];
-	screen_vbo = buffers[1];
-	static_tiles_vbo = buffers[2];
-	ebo = buffers[3];
+	static_tiles_vbo = buffers[1];
+	ebo = buffers[2];
 
 	size indices_length = SPRITE_BUFFER_CAPACITY * 6;
 	u32 *indices = AllocArray(&temp, u32, indices_length);
@@ -312,46 +295,11 @@ void RendererInit(Renderer *renderer, Arena temp)
 		indices[i + 5] = j + 3;
 	}
 
-	// You can't bind an EBO unless a VAO is binded
-	Quad v = {
-		{
-			.pos = {-1.0f, 1.0f},
-			.uv = {0.0f, 1.0f}
-
-		},
-		{
-			.pos = {1.0f, 1.0f},
-			.uv = {1.0f, 1.0f}
-
-		},
-		{
-			.pos = {1.0f, -1.0f},
-			.uv = {1.0f, 0.0f}
-
-		},
-		{
-			.pos = {-1.0f, -1.0f},
-			.uv = {0.0f, 0.0f}
-
-		}
-	};
-	glBindVertexArray(screen_vao);
+	glBindVertexArray(static_tiles_vao);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * indices_length, indices, GL_STATIC_DRAW); 
 
-	glBindBuffer(GL_ARRAY_BUFFER, screen_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Quad), v, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(QuadVertex), (void *)offsetof(QuadVertex, pos));
-	glEnableVertexAttribArray(0);
-
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(QuadVertex), (void *)offsetof(QuadVertex, uv));
-	glEnableVertexAttribArray(1);
-
-	glBindVertexArray(static_tiles_vao);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 	glBindBuffer(GL_ARRAY_BUFFER, static_tiles_vbo);
 
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(QuadVertex), (void *)offsetof(QuadVertex, pos));
@@ -381,19 +329,19 @@ void RendererInit(Renderer *renderer, Arena temp)
 	glGenFramebuffers(1, &framebuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
-	u32 framebuffer_texture;
-	glGenTextures(1, &framebuffer_texture);
-	glBindTexture(GL_TEXTURE_2D, framebuffer_texture);
+	u32 framebuffer_color;
+	glGenTextures(1, &framebuffer_color);
+	glBindTexture(GL_TEXTURE_2D, framebuffer_color);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, CANVAS_WIDTH, CANVAS_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer_texture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer_color, 0);
 
-	u32 rbo;
-	glGenRenderbuffers(1, &rbo);
-	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, CANVAS_WIDTH, CANVAS_HEIGHT);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+	u32 framebuffer_stencil;
+	glGenRenderbuffers(1, &framebuffer_stencil);
+	glBindRenderbuffer(GL_RENDERBUFFER, framebuffer_stencil);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, CANVAS_WIDTH, CANVAS_HEIGHT);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER,  GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, framebuffer_stencil);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		Panic("Error while creating framebuffer");
@@ -401,14 +349,12 @@ void RendererInit(Renderer *renderer, Arena temp)
 	glClearColor(0.f, 0.f, 0.f, 1.f);
 	glUseProgram(program);
 
+	glBindTexture(GL_TEXTURE_2D, spritesheet);
 	renderer->spritesheet = spritesheet;
 	renderer->sprite_vao = sprite_vao;
-	renderer->screen_vao = screen_vao;
 	renderer->sprite_vbo = sprite_vbo;
-	renderer->screen_vbo = screen_vbo;
 	renderer->u_transform = transform;
 	renderer->framebuffer = framebuffer;
-	renderer->framebuffer_texture = framebuffer_texture;
 	renderer->sprite_buffer_length = 0;
 	renderer->static_tiles_vbo = static_tiles_vbo;
 	renderer->static_tiles_vao = static_tiles_vao;

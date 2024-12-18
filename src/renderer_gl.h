@@ -14,14 +14,13 @@ typedef struct {
 typedef QuadVertex Quad[4];
 
 struct Renderer {
-	u32 shader, framebuffer, framebuffer_texture, sprite_vbo, screen_vbo,
-	    screen_vao, sprite_vao, spritesheet, quad_ebo, static_tiles_vao,
+	u32 shader, framebuffer, sprite_vbo,
+	    sprite_vao, spritesheet, static_tiles_vao,
 	    static_tiles_vbo;
 	s32 u_transform;
 	mat4 transform;
-	mat4 identity;
 
-	int width, height;
+	int width, height, top, left;
 
 	s32 static_tiles_length;
 	s32 sprite_buffer_length;

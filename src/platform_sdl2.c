@@ -145,7 +145,7 @@ Game *InitPlatform(void)
 	const char *errString = NULL;
 	size memorySize = 1<<28;
 	SDL_Window *window = NULL;
-	int width = 512, height = 512;
+	int width = 640, height = 360;
 
 	SDL_version compiled;
 	SDL_version linked;
@@ -211,7 +211,7 @@ Game *InitPlatform(void)
 #endif
 #endif
 
-	SDL_GL_SetSwapInterval(1);
+	SDL_GL_SetSwapInterval(0);
 
 	Arena arena;
 	ArenaInit(&arena, game->memory, memorySize);
