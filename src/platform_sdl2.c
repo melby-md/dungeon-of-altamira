@@ -220,7 +220,7 @@ Game *InitPlatform(void)
 	resize(game);
 
 	game->lastUpdate = SDL_GetPerformanceCounter();
-	game->state = InitGame(&arena);
+	game->state = InitGame(&arena, &game->renderer);
 
 	return game;
 }

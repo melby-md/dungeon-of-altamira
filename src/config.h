@@ -6,4 +6,4 @@ static const int SPRITESHEET_COLUMNS_EXP = 2;
 static const int SPRITESHEET_ROWS = 1;
 
 // in pixels
-static const int SPRITE_DIMENSIONS = 16;
+static const int SPRITE_DIMENSION = 32;

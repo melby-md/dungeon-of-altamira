@@ -11,16 +11,21 @@ typedef struct {
 	float uv[2];
 } QuadVertex;
 
+typedef QuadVertex Quad[4];
+
 struct Renderer {
-	u32 shader, framebuffer, framebuffer_texture, sprite_vbo, screen_vbo, screen_vao, sprite_vao, spritesheet;
+	u32 shader, framebuffer, framebuffer_texture, sprite_vbo, screen_vbo,
+	    screen_vao, sprite_vao, spritesheet, quad_ebo, static_tiles_vao,
+	    static_tiles_vbo;
 	s32 u_transform;
 	mat4 transform;
 	mat4 identity;
 
 	int width, height;
 
+	s32 static_tiles_length;
 	s32 sprite_buffer_length;
-	QuadVertex sprite_buffer[SPRITE_BUFFER_CAPACITY * 4];
+	Quad sprite_buffer[SPRITE_BUFFER_CAPACITY];
 };
 
 void RendererInit(Renderer *, Arena);
