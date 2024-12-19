@@ -21,9 +21,9 @@
 #endif
 
 #ifdef GL_ES
-char shader_header[] = "#version 330 core\n";
+static char shader_header[] = "#version 330 core\n";
 #else
-char shader_header[] = "#version 300 es\n";
+static char shader_header[] = "#version 300 es\n";
 #endif
 
 #define LOG_SIZE 1024
@@ -147,7 +147,7 @@ void DrawSprite(Renderer *renderer, vec2 pos, int id)
 	pushQuad(renderer, pos, id);
 }
 
-void BegStaticTiles(Renderer *renderer)
+void BeginStaticTiles(Renderer *renderer)
 {
 	Assert(renderer->sprite_buffer_length == 0);
 }
@@ -176,6 +176,36 @@ void EndStaticTiles(Renderer *renderer)
 	glBindBuffer(GL_ARRAY_BUFFER, renderer->sprite_vbo);
 }
 
+void BeginCamera(Renderer *renderer, vec2 camera)
+{
+	renderer->transform[12] = -(camera.x + .5f)*renderer->transform[0];
+	renderer->transform[13] = -(camera.y + .5f)*renderer->transform[5];
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), renderer->transform);
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, renderer->framebuffer);
+	glViewport(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glBindVertexArray(renderer->static_tiles_vao);
+	glDrawElements(GL_TRIANGLES, renderer->static_tiles_length, GL_UNSIGNED_INT, 0);
+
+	glBindVertexArray(renderer->sprite_vao);
+}
+
+void EndCamera(Renderer *renderer)
+{
+	RendererFlush(renderer);
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glViewport(0, 0, renderer->width, renderer->height);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glBlitFramebuffer(
+		0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
+		renderer->left, renderer->top, renderer->right, renderer->bottom,
+		GL_COLOR_BUFFER_BIT, GL_NEAREST
+	);
+}
+
 void RendererResize(Renderer *renderer, int width, int height)
 {
 	// TODO: solve letterbox issues
@@ -190,41 +220,6 @@ void RendererResize(Renderer *renderer, int width, int height)
 
 	renderer->width = width;
 	renderer->height = height;
-}
-
-void RendererBegin(Renderer *renderer)
-{
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, renderer->framebuffer);
-
-	glViewport(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glUniformMatrix4fv(renderer->u_transform, 1, GL_FALSE, renderer->transform);
-	glBindVertexArray(renderer->static_tiles_vao);
-	glDrawElements(GL_TRIANGLES, renderer->static_tiles_length, GL_UNSIGNED_INT, 0);
-
-	glBindVertexArray(renderer->sprite_vao);
-}
-
-void RendererEnd(Renderer *renderer)
-{
-	RendererFlush(renderer);
-
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glViewport(0, 0, renderer->width, renderer->height);
-
-	glClear(GL_COLOR_BUFFER_BIT);
-	glBlitFramebuffer(
-		0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
-		renderer->left, renderer->top, renderer->right, renderer->bottom,
-		GL_COLOR_BUFFER_BIT, GL_NEAREST
-	);
-}
-
-void CameraMove(Renderer *renderer, vec2 pos)
-{
-	renderer->transform[12] = -(pos.x + .5f)*renderer->transform[0];
-	renderer->transform[13] = -(pos.y + .5f)*renderer->transform[5];
 }
 
 #ifndef GL_ES
@@ -278,12 +273,23 @@ void RendererInit(Renderer *renderer, Arena temp)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// Compiling and checking shaders
-	u32 program = createProgram(ASSET_VERTEX_SHADER, ASSET_FRAGMENT_SHADER);
+	u32 program = createProgram(ASSET_QUAD_VERTEX_SHADER, ASSET_QUAD_FRAGMENT_SHADER);
 
-	s32 transform = glGetUniformLocation(program, "transform");
-	if (transform == -1) {
-		Panic("Shader: no uniform named \"transform\"");
+	s32 ubo_binding = glGetUniformBlockIndex(program, "UBO");
+	if (ubo_binding == -1) {
+		Panic("Shader: no uniform block named \"UBO\"");
 	}
+	glUniformBlockBinding(program, ubo_binding, 0);
+
+	// sizeof(mat4) + sizeof(vec2)
+	// no need for padding
+	static const size ubo_length = 72;
+	u32 ubo;
+	glGenBuffers(1, &ubo);
+	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+	glBufferData(GL_UNIFORM_BUFFER, ubo_length, NULL, GL_DYNAMIC_DRAW);
+
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo, 0, ubo_length);
 
 	// Setting up vertex buffers
 	u32 buffers[3], sprite_vbo, static_tiles_vbo, ebo;
@@ -364,12 +370,10 @@ void RendererInit(Renderer *renderer, Arena temp)
 
 	glClearColor(0.f, 0.f, 0.f, 1.f);
 	glUseProgram(program);
-
 	glBindTexture(GL_TEXTURE_2D, spritesheet);
-	renderer->spritesheet = spritesheet;
+
 	renderer->sprite_vao = sprite_vao;
 	renderer->sprite_vbo = sprite_vbo;
-	renderer->u_transform = transform;
 	renderer->framebuffer = framebuffer;
 	renderer->sprite_buffer_length = 0;
 	renderer->static_tiles_vbo = static_tiles_vbo;

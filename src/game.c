@@ -70,7 +70,7 @@ void Update(GameState *state, Controls controls, float dt)
 {
 	// TODO: Better collision
 	if (controls.direction.x != 0.f || controls.direction.y != 0.f) {
-		vec2 movement = vec2_mulf(controls.direction, dt * .8f);
+		vec2 movement = vec2_mulf(controls.direction, dt);
 
 		vec2 old = state->player.pos;
 		state->player.pos.x += movement.x;
@@ -86,9 +86,9 @@ void Update(GameState *state, Controls controls, float dt)
 
 void Render(GameState *state, Renderer *renderer)
 {
-	CameraMove(renderer, state->player.pos);
-
+	BeginCamera(renderer, state->player.pos);
 	DrawSprite(renderer, state->player.pos, ZUMBI);
+	EndCamera(renderer);
 }
 
 GameState *InitGame(Arena *arena, Renderer *renderer)
@@ -107,7 +107,7 @@ GameState *InitGame(Arena *arena, Renderer *renderer)
 	state->dungeon_width = width;
 	state->dungeon_height = height;
 
-	BegStaticTiles(renderer);
+	BeginStaticTiles(renderer);
 	for (int i = 0; i < state->dungeon_height; i++)
 		for (int j = 0; j < state->dungeon_width; j++) {
 			int id = state->dungeon[i*state->dungeon_width + j];

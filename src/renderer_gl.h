@@ -14,8 +14,7 @@ typedef struct {
 typedef QuadVertex Quad[4];
 
 struct Renderer {
-	u32 shader, framebuffer, sprite_vbo,
-	    sprite_vao, spritesheet, static_tiles_vao,
+	u32 framebuffer, sprite_vbo, sprite_vao, static_tiles_vao,
 	    static_tiles_vbo;
 	s32 u_transform;
 	mat4 transform;
@@ -30,7 +29,5 @@ struct Renderer {
 void RendererInit(Renderer *, Arena);
 void RendererResize(Renderer *renderer, int, int);
 void RendererEnableDebugLogs(void);
-void RendererBegin(Renderer *);
-void RendererEnd(Renderer *);
 
 #endif

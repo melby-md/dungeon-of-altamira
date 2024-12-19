@@ -6,13 +6,13 @@
 typedef struct Renderer Renderer;
 
 // Used for sprites that change every frame (ex.: player and enemies)
+void BeginCamera(Renderer *, vec2);
 void DrawSprite(Renderer *, vec2, int);
+void EndCamera(Renderer *);
 
 // Used for sprites that don't change frequently (tiles) (ex.: background)
-void BegStaticTiles(Renderer *);
+void BeginStaticTiles(Renderer *);
 void PushTile(Renderer *, vec2, int);
 void EndStaticTiles(Renderer *);
-
-void CameraMove(Renderer *, vec2);
 
 #endif

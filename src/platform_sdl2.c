@@ -131,10 +131,7 @@ void Loop(Game *game)
 	game->lastUpdate = current;
 
 	Update(game->state, controls, dt);
-
-	RendererBegin(&game->renderer);
 	Render(game->state, &game->renderer);
-	RendererEnd(&game->renderer);
 
 	SDL_GL_SwapWindow(game->window);
 }
