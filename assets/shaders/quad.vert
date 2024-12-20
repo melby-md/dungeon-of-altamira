@@ -7,9 +7,11 @@ layout (std140) uniform UBO {
 };
 
 out vec2 v_uv;
+out vec2 v_pos;
 
 void main(void)
 {
 	v_uv = a_uv;
+	v_pos = a_pos;
 	gl_Position = u_transform * vec4(a_pos, 0.0, 1.0);
 }
