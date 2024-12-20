@@ -75,6 +75,11 @@ static inline vec2 vec2_add(vec2 a, vec2 b)
 	return (vec2){a.x + b.x, a.y + b.y};
 }
 
+static inline vec2 vec2_addf(vec2 v, float f)
+{
+	return (vec2){v.x + f, v.y + f};
+}
+
 static inline vec2 vec2_sub(vec2 a, vec2 b)
 {
 	return (vec2){a.x - b.x, a.y - b.y};

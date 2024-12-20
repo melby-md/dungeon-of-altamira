@@ -83,21 +83,6 @@ static u32 createProgram(int vertex_src, int fragment_src)
 	return shader;
 }
 
-static void RendererFlush(Renderer *renderer)
-{
-	s32 length = renderer->sprite_buffer_length;
-	glBufferSubData(
-		GL_ARRAY_BUFFER,
-		0,
-		length * sizeof(Quad),
-		(void *)renderer->sprite_buffer
-	);
-
-	glDrawElements(GL_TRIANGLES, length * 6, GL_UNSIGNED_INT, 0);
-
-	renderer->sprite_buffer_length = 0;
-}
-
 static void pushQuad(Renderer *renderer, vec2 pos, int id) {
 	QuadVertex *quad = renderer->sprite_buffer[renderer->sprite_buffer_length++];
 
@@ -139,14 +124,6 @@ static void pushQuad(Renderer *renderer, vec2 pos, int id) {
 	};
 }
 
-void DrawSprite(Renderer *renderer, vec2 pos, int id)
-{
-	if (renderer->sprite_buffer_length >= SPRITE_BUFFER_CAPACITY)
-		RendererFlush(renderer);
-	
-	pushQuad(renderer, pos, id);
-}
-
 void BeginStaticTiles(Renderer *renderer)
 {
 	Assert(renderer->sprite_buffer_length == 0);
@@ -176,15 +153,32 @@ void EndStaticTiles(Renderer *renderer)
 	glBindBuffer(GL_ARRAY_BUFFER, renderer->sprite_vbo);
 }
 
+static void flushQuads(Renderer *renderer)
+{
+	s32 length = renderer->sprite_buffer_length;
+	glBufferSubData(
+		GL_ARRAY_BUFFER,
+		0,
+		length * sizeof(Quad),
+		(void *)renderer->sprite_buffer
+	);
+
+	glDrawElements(GL_TRIANGLES, length * 6, GL_UNSIGNED_INT, 0);
+
+	renderer->sprite_buffer_length = 0;
+}
+
 void BeginCamera(Renderer *renderer, vec2 camera)
 {
-	renderer->transform[12] = -(camera.x + .5f)*renderer->transform[0];
-	renderer->transform[13] = -(camera.y + .5f)*renderer->transform[5];
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), renderer->transform);
+	camera = vec2_addf(camera, .5f);
 
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, renderer->framebuffer);
-	glViewport(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glUseProgram(renderer->quad_shader);
+
+	renderer->transform[12] = -camera.x*renderer->transform[0];
+	renderer->transform[13] = -camera.y*renderer->transform[5];
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), renderer->transform);
+	float pos[2] = {camera.x, camera.y};
+	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4), sizeof(pos), pos);
 
 	glBindVertexArray(renderer->static_tiles_vao);
 	glDrawElements(GL_TRIANGLES, renderer->static_tiles_length, GL_UNSIGNED_INT, 0);
@@ -192,10 +186,76 @@ void BeginCamera(Renderer *renderer, vec2 camera)
 	glBindVertexArray(renderer->sprite_vao);
 }
 
+void DrawSprite(Renderer *renderer, vec2 pos, int id)
+{
+	if (renderer->sprite_buffer_length >= SPRITE_BUFFER_CAPACITY)
+		flushQuads(renderer);
+	
+	pushQuad(renderer, pos, id);
+}
+
 void EndCamera(Renderer *renderer)
 {
-	RendererFlush(renderer);
+	flushQuads(renderer);
 
+	glUseProgram(renderer->shadow_shader);
+
+	glBindVertexArray(renderer->shadow_vao);
+	glDrawElements(GL_TRIANGLES, renderer->shadow_buffer_length, GL_UNSIGNED_INT, 0);
+}
+
+void BeginShadows(Renderer *renderer)
+{
+	renderer->shadow_buffer_length = 0;
+}
+
+void PushShadow(Renderer *renderer, vec2 p1, vec2 p2)
+{
+	if (renderer->shadow_buffer_length >= SPRITE_BUFFER_CAPACITY)
+		Panic("Shdows");
+
+	ShadowVertex *shadow = renderer->shadow_buffer[renderer->shadow_buffer_length++];
+
+	shadow[0] = (ShadowVertex){
+		.pos = {p1.x, p1.y, 0.f},
+	};
+
+	shadow[1] = (ShadowVertex){
+		.pos = {p2.x, p2.y, 0.f},
+	};
+
+	shadow[2] = (ShadowVertex){
+		.pos = {p2.x, p2.y, 1.f},
+	};
+
+	shadow[3] = (ShadowVertex){
+		.pos = {p1.x, p1.y, 1.f},
+	};
+}
+
+void EndShadows(Renderer *renderer)
+{
+	s32 length = renderer->shadow_buffer_length;
+	glBindBuffer(GL_ARRAY_BUFFER, renderer->shadow_vbo);
+	glBufferSubData(
+		GL_ARRAY_BUFFER,
+		0,
+		length * sizeof(Shadow),
+		(void *)renderer->shadow_buffer
+	);
+	glBindBuffer(GL_ARRAY_BUFFER, renderer->sprite_vbo);
+	renderer->shadow_buffer_length = length * 6;
+}
+
+void BeginRender(Renderer *renderer)
+{
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, renderer->framebuffer);
+	glViewport(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+	glClear(GL_COLOR_BUFFER_BIT);
+}
+
+void EndRender(Renderer *renderer)
+{
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glViewport(0, 0, renderer->width, renderer->height);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -273,13 +333,20 @@ void RendererInit(Renderer *renderer, Arena temp)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// Compiling and checking shaders
-	u32 program = createProgram(ASSET_QUAD_VERTEX_SHADER, ASSET_QUAD_FRAGMENT_SHADER);
+	u32 quad_shader = createProgram(ASSET_QUAD_VERTEX_SHADER, ASSET_QUAD_FRAGMENT_SHADER);
+	u32 shadow_shader = createProgram(ASSET_SHADOW_VERTEX_SHADER, ASSET_SHADOW_FRAGMENT_SHADER);
 
-	s32 ubo_binding = glGetUniformBlockIndex(program, "UBO");
+	s32 ubo_binding = glGetUniformBlockIndex(quad_shader, "UBO");
 	if (ubo_binding == -1) {
 		Panic("Shader: no uniform block named \"UBO\"");
 	}
-	glUniformBlockBinding(program, ubo_binding, 0);
+	glUniformBlockBinding(quad_shader, ubo_binding, 0);
+
+	ubo_binding = glGetUniformBlockIndex(shadow_shader, "UBO");
+	if (ubo_binding == -1) {
+		Panic("Shader: no uniform block named \"UBO\"");
+	}
+	glUniformBlockBinding(shadow_shader, ubo_binding, 0);
 
 	// sizeof(mat4) + sizeof(vec2)
 	// no need for padding
@@ -292,18 +359,20 @@ void RendererInit(Renderer *renderer, Arena temp)
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo, 0, ubo_length);
 
 	// Setting up vertex buffers
-	u32 buffers[3], sprite_vbo, static_tiles_vbo, ebo;
-	u32 vaos[2], sprite_vao, static_tiles_vao;
+	u32 buffers[4], sprite_vbo, static_tiles_vbo, shadow_vbo, ebo;
+	u32 vaos[3], sprite_vao, static_tiles_vao, shadow_vao;
 
 	glGenVertexArrays(countof(vaos), vaos);
 	glGenBuffers(countof(buffers), buffers);
 
 	sprite_vao = vaos[0];
 	static_tiles_vao = vaos[1];
+	shadow_vao = vaos[2];
 
 	sprite_vbo = buffers[0];
 	static_tiles_vbo = buffers[1];
-	ebo = buffers[2];
+	shadow_vbo = buffers[2];
+	ebo = buffers[3];
 
 	size indices_length = SPRITE_BUFFER_CAPACITY * 6;
 	u32 *indices = AllocArray(&temp, u32, indices_length);
@@ -329,6 +398,16 @@ void RendererInit(Renderer *renderer, Arena temp)
 
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(QuadVertex), (void *)offsetof(QuadVertex, uv));
 	glEnableVertexAttribArray(1);
+
+	glBindVertexArray(shadow_vao);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+
+	glBindBuffer(GL_ARRAY_BUFFER, shadow_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(renderer->shadow_buffer), NULL, GL_DYNAMIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(ShadowVertex), (void *)offsetof(ShadowVertex, pos));
+	glEnableVertexAttribArray(0);
 
 	glBindVertexArray(sprite_vao);
 
@@ -369,13 +448,17 @@ void RendererInit(Renderer *renderer, Arena temp)
 		Panic("Error while creating framebuffer");
 
 	glClearColor(0.f, 0.f, 0.f, 1.f);
-	glUseProgram(program);
 	glBindTexture(GL_TEXTURE_2D, spritesheet);
 
+	renderer->quad_shader = quad_shader;
+	renderer->shadow_shader = shadow_shader;
+	renderer->framebuffer = framebuffer;
 	renderer->sprite_vao = sprite_vao;
 	renderer->sprite_vbo = sprite_vbo;
-	renderer->framebuffer = framebuffer;
-	renderer->sprite_buffer_length = 0;
 	renderer->static_tiles_vbo = static_tiles_vbo;
 	renderer->static_tiles_vao = static_tiles_vao;
+	renderer->shadow_vbo = shadow_vbo;
+	renderer->shadow_vao = shadow_vao;
+	renderer->sprite_buffer_length = 0;
+	renderer->shadow_buffer_length = 0;
 }

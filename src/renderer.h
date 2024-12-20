@@ -15,4 +15,8 @@ void BeginStaticTiles(Renderer *);
 void PushTile(Renderer *, vec2, int);
 void EndStaticTiles(Renderer *);
 
+void BeginShadows(Renderer *);
+void PushShadow(Renderer *, vec2, vec2);
+void EndShadows(Renderer *);
+
 #endif

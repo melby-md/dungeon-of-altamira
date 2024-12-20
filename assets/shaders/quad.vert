@@ -3,7 +3,7 @@ layout (location = 1) in vec2 a_uv;
 
 layout (std140) uniform UBO {
 	mat4 u_transform;
-	vec2 u_unused;
+	vec2 u_light_pos;
 };
 
 out vec2 v_uv;

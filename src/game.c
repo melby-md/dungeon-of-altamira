@@ -115,5 +115,9 @@ GameState *InitGame(Arena *arena, Renderer *renderer)
 		}
 	EndStaticTiles(renderer);
 
+	BeginShadows(renderer);
+	PushShadow(renderer, vec2(1.f, 1.f), vec2(2.f, 1.f));
+	EndShadows(renderer);
+
 	return state;
 }

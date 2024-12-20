@@ -2,7 +2,7 @@
 #include "platform.h"
 
 char *AssetFileName[] = {
-#define X(id, file)  file,
+#define X(id, file)  "assets/" file,
 	ASSETS
 #undef X
 };

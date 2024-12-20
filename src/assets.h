@@ -3,9 +3,11 @@
 #include "common.h"
 
 #define ASSETS \
-	X(QUAD_VERTEX_SHADER, "assets/shaders/quad.vert") \
-	X(QUAD_FRAGMENT_SHADER, "assets/shaders/quad.frag") \
-	X(SPRITESHEET, "assets/spritesheet.png")
+	X(QUAD_VERTEX_SHADER, "shaders/quad.vert") \
+	X(QUAD_FRAGMENT_SHADER, "shaders/quad.frag") \
+	X(SHADOW_VERTEX_SHADER, "shaders/shadow.vert") \
+	X(SHADOW_FRAGMENT_SHADER, "shaders/shadow.frag") \
+	X(SPRITESHEET, "spritesheet.png")
 
 enum assets {
 #define X(id, file) ASSET_##id,
