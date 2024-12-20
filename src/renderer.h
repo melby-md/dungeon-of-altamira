@@ -10,13 +10,10 @@ void BeginCamera(Renderer *, vec2);
 void DrawSprite(Renderer *, vec2, int);
 void EndCamera(Renderer *);
 
-// Used for sprites that don't change frequently (tiles) (ex.: background)
+// Used for elements that don't change frequently (background tiles and shadows)
 void BeginStaticTiles(Renderer *);
 void PushTile(Renderer *, vec2, int);
-void EndStaticTiles(Renderer *);
-
-void BeginShadows(Renderer *);
 void PushShadow(Renderer *, vec2, vec2);
-void EndShadows(Renderer *);
+void EndStaticTiles(Renderer *);
 
 #endif

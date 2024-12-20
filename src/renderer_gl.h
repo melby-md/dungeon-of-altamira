@@ -2,7 +2,7 @@
 #define _RENDERER_GL_H
 #include "renderer.h"
 
-#define SPRITE_BUFFER_CAPACITY 256
+#define SPRITE_BUFFER_CAPACITY 1024
 
 typedef float mat4[16];
 

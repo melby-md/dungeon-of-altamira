@@ -15,7 +15,6 @@
 struct Game {
 	SDL_Window *window;
 	SDL_GLContext gl_ctx;
-	int width, height;
 	Renderer renderer;
 	u64 lastUpdate;
 	int keyboard_length;
@@ -76,14 +75,10 @@ WriteText(Graphics *g, str txt, int x, int y)
 
 static void resize(Game *game)
 {
-	int width, height;
 	SDL_GL_GetDrawableSize(game->window, &width, &height);
 	Log("Resized: %dx%d", width, height);
 
 	RendererResize(&game->renderer, width, height);
-
-	game->width = width;
-	game->height = height;
 }
 
 void Loop(Game *game)

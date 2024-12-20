@@ -23,10 +23,10 @@ struct GameState {
 };
 
 enum sprites {
-	CHAO,
-	PAREDE,
-	PESSOA,
-	ZUMBI
+	GROUND,
+	WALL,
+	PERSON,
+	ZOMBIE
 };
 
 AABB translateBox(vec2 pos, AABB box)
@@ -59,7 +59,7 @@ bool colisionAgainstTileMap(Entity *e, GameState *state)
 			if (y < 0 || y >= state->dungeon_height)
 				return true;
 
-			if (state->dungeon[y*state->dungeon_height + x] == PAREDE)
+			if (state->dungeon[y*state->dungeon_height + x] == WALL)
 				return true;
 		}
 
@@ -70,7 +70,7 @@ void Update(GameState *state, Controls controls, float dt)
 {
 	// TODO: Better collision
 	if (controls.direction.x != 0.f || controls.direction.y != 0.f) {
-		vec2 movement = vec2_mulf(controls.direction, dt);
+		vec2 movement = vec2_mulf(controls.direction, dt * 1.8f);
 
 		vec2 old = state->player.pos;
 		state->player.pos.x += movement.x;
@@ -87,7 +87,7 @@ void Update(GameState *state, Controls controls, float dt)
 void Render(GameState *state, Renderer *renderer)
 {
 	BeginCamera(renderer, state->player.pos);
-	DrawSprite(renderer, state->player.pos, ZUMBI);
+	DrawSprite(renderer, state->player.pos, ZOMBIE);
 	EndCamera(renderer);
 }
 
@@ -101,11 +101,13 @@ GameState *InitGame(Arena *arena, Renderer *renderer)
 	};
 	state->arena = *arena;
 
-	int width = 2, height = 20;
+	int width = 20, height = 20;
 	state->dungeon = AllocArray(arena, u8, sizeof(u8) * width * height);
-	memset(state->dungeon, CHAO, sizeof(u8) * width * height);
+	memset(state->dungeon, GROUND, sizeof(u8) * width * height);
 	state->dungeon_width = width;
 	state->dungeon_height = height;
+
+	state->dungeon[45] = WALL;
 
 	BeginStaticTiles(renderer);
 	for (int i = 0; i < state->dungeon_height; i++)
@@ -113,11 +115,8 @@ GameState *InitGame(Arena *arena, Renderer *renderer)
 			int id = state->dungeon[i*state->dungeon_width + j];
 			PushTile(renderer, vec2((float)j, (float)i), id);
 		}
-	EndStaticTiles(renderer);
-
-	BeginShadows(renderer);
 	PushShadow(renderer, vec2(1.f, 1.f), vec2(2.f, 1.f));
-	EndShadows(renderer);
+	EndStaticTiles(renderer);
 
 	return state;
 }

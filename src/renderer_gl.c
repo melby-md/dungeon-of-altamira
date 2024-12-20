@@ -127,6 +127,7 @@ static void pushQuad(Renderer *renderer, vec2 pos, int id) {
 void BeginStaticTiles(Renderer *renderer)
 {
 	Assert(renderer->sprite_buffer_length == 0);
+	renderer->shadow_buffer_length = 0;
 }
 
 void PushTile(Renderer *renderer, vec2 pos, int id)
@@ -137,19 +138,54 @@ void PushTile(Renderer *renderer, vec2 pos, int id)
 	pushQuad(renderer, pos, id);
 }
 
+void PushShadow(Renderer *renderer, vec2 p1, vec2 p2)
+{
+	if (renderer->shadow_buffer_length >= SPRITE_BUFFER_CAPACITY)
+		Panic("Shdows");
+
+	ShadowVertex *shadow = renderer->shadow_buffer[renderer->shadow_buffer_length++];
+
+	shadow[0] = (ShadowVertex){
+		.pos = {p1.x, p1.y, 0.f},
+	};
+
+	shadow[1] = (ShadowVertex){
+		.pos = {p2.x, p2.y, 0.f},
+	};
+
+	shadow[2] = (ShadowVertex){
+		.pos = {p2.x, p2.y, 1.f},
+	};
+
+	shadow[3] = (ShadowVertex){
+		.pos = {p1.x, p1.y, 1.f},
+	};
+}
+
 void EndStaticTiles(Renderer *renderer)
 {
-	s32 length = renderer->sprite_buffer_length;
+	s32 tile_length = renderer->sprite_buffer_length;
 	renderer->sprite_buffer_length = 0;
-	renderer->static_tiles_length = length * 6;
+	renderer->static_tiles_length = tile_length * 6;
 
 	glBindBuffer(GL_ARRAY_BUFFER, renderer->static_tiles_vbo);
 	glBufferData(
 		GL_ARRAY_BUFFER,
-		sizeof(Quad) * length,
+		sizeof(Quad) * tile_length,
 		renderer->sprite_buffer,
 		GL_STATIC_DRAW
 	);
+
+	s32 shadow_length = renderer->shadow_buffer_length;
+	glBindBuffer(GL_ARRAY_BUFFER, renderer->shadow_vbo);
+	glBufferSubData(
+		GL_ARRAY_BUFFER,
+		0,
+		shadow_length * sizeof(Shadow),
+		(void *)renderer->shadow_buffer
+	);
+	renderer->shadow_buffer_length = shadow_length * 6;
+
 	glBindBuffer(GL_ARRAY_BUFFER, renderer->sprite_vbo);
 }
 
@@ -202,49 +238,6 @@ void EndCamera(Renderer *renderer)
 
 	glBindVertexArray(renderer->shadow_vao);
 	glDrawElements(GL_TRIANGLES, renderer->shadow_buffer_length, GL_UNSIGNED_INT, 0);
-}
-
-void BeginShadows(Renderer *renderer)
-{
-	renderer->shadow_buffer_length = 0;
-}
-
-void PushShadow(Renderer *renderer, vec2 p1, vec2 p2)
-{
-	if (renderer->shadow_buffer_length >= SPRITE_BUFFER_CAPACITY)
-		Panic("Shdows");
-
-	ShadowVertex *shadow = renderer->shadow_buffer[renderer->shadow_buffer_length++];
-
-	shadow[0] = (ShadowVertex){
-		.pos = {p1.x, p1.y, 0.f},
-	};
-
-	shadow[1] = (ShadowVertex){
-		.pos = {p2.x, p2.y, 0.f},
-	};
-
-	shadow[2] = (ShadowVertex){
-		.pos = {p2.x, p2.y, 1.f},
-	};
-
-	shadow[3] = (ShadowVertex){
-		.pos = {p1.x, p1.y, 1.f},
-	};
-}
-
-void EndShadows(Renderer *renderer)
-{
-	s32 length = renderer->shadow_buffer_length;
-	glBindBuffer(GL_ARRAY_BUFFER, renderer->shadow_vbo);
-	glBufferSubData(
-		GL_ARRAY_BUFFER,
-		0,
-		length * sizeof(Shadow),
-		(void *)renderer->shadow_buffer
-	);
-	glBindBuffer(GL_ARRAY_BUFFER, renderer->sprite_vbo);
-	renderer->shadow_buffer_length = length * 6;
 }
 
 void BeginRender(Renderer *renderer)
