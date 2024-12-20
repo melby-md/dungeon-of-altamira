@@ -75,6 +75,7 @@ WriteText(Graphics *g, str txt, int x, int y)
 
 static void resize(Game *game)
 {
+	int width, height;
 	SDL_GL_GetDrawableSize(game->window, &width, &height);
 	Log("Resized: %dx%d", width, height);
 
