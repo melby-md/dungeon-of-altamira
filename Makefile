@@ -49,8 +49,8 @@ endif
 
 all: $(TARGET)
 
-$(DIR)/dungeon_hotreload$(EXE): src/unix_hotreload.c | $(DIR)
-	$(CC) $(CFLAGS) $(CPPFLAGS) -D'GAME_LIBRARY="./$(DIR)/dungeon.so"' $(LDFLAGS) -o $@ $< $(LDLIBS)
+$(DIR)/dungeon_hotreload$(EXE): $(DIR)/glad.o src/unix_hotreload.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -D'GAME_LIBRARY="./$(DIR)/dungeon.so"' $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 $(DIR)/dungeon.so: $(OBJ)
 	$(CC) -shared -o $@ $(OBJ)
@@ -58,13 +58,15 @@ $(DIR)/dungeon.so: $(OBJ)
 $(DIR)/dungeon$(EXE): $(OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
 
-$(DIR)/%.o: src/%.c | $(DIR)
+$(DIR)/%.o: src/%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -fPIC -c -o $@ $<
 
 $(DIR)/image.o: WARNINGS = 
 $(DIR)/glad.o: WARNINGS =
 $(DIR)/glad.o: third-party/glad.c 
 	$(CC) $(CFLAGS) $(CPPFLAGS) -fPIC -c -o $@ $<
+
+$(OBJ): | $(DIR)
 
 $(DIR):
 	mkdir -p $@
