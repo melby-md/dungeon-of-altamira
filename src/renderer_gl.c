@@ -431,12 +431,6 @@ void RendererInit(Renderer *renderer, Arena temp)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer_color, 0);
 
-	u32 framebuffer_stencil;
-	glGenRenderbuffers(1, &framebuffer_stencil);
-	glBindRenderbuffer(GL_RENDERBUFFER, framebuffer_stencil);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, CANVAS_WIDTH, CANVAS_HEIGHT);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER,  GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, framebuffer_stencil);
-
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		Panic("Error while creating framebuffer");
 
