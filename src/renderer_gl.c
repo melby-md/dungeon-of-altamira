@@ -243,14 +243,12 @@ void EndCamera(Renderer *renderer)
 void BeginRender(Renderer *renderer)
 {
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, renderer->framebuffer);
-	glViewport(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void EndRender(Renderer *renderer)
 {
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glViewport(0, 0, renderer->width, renderer->height);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glBlitFramebuffer(
 		0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -434,7 +432,9 @@ void RendererInit(Renderer *renderer, Arena temp)
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		Panic("Error while creating framebuffer");
 
+	glViewport(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 	glClearColor(0.f, 0.f, 0.f, 1.f);
+
 	glBindTexture(GL_TEXTURE_2D, spritesheet);
 
 	renderer->quad_shader = quad_shader;
