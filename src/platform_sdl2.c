@@ -1,16 +1,16 @@
 #include <stdbool.h>
 #include <stdlib.h> // malloc
 
+#ifdef GLAD
+#  include <glad/gl.h>
+#endif
+
 #include "common.h"
 #include "game.h"
 #include "hotreload.h"
 #include "platform.h"
 #include "renderer_gl.h"
 #include "SDL.h"
-
-#ifdef GLAD
-#  include "glad.h"
-#endif
 
 struct Game {
 	SDL_Window *window;
@@ -24,6 +24,8 @@ struct Game {
 	GameState *state;
 	char memory[];
 };
+
+static bool running = true;
 
 void Finalize(Game *game)
 {
@@ -145,7 +147,7 @@ NORETURN void Panic(const char *msg)
 
 void RequestExit(void)
 {
-	GAME_API.running = false;
+	running = false;
 }
 
 Game *InitPlatform(void)
@@ -219,16 +221,11 @@ Game *InitPlatform(void)
 		Panic(SDL_GetError());
 
 #ifdef GLAD
-	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
-		Panic("GLAD failure");
-#endif
-
-	// Does this output any useful information?
-#if 0
-#ifndef GL_ES
-	if (SDL_GL_ExtensionSupported("GL_KHR_debug"))
-		RendererEnableDebugLogs();
-#endif
+#  ifdef GL_ES
+	gladLoadGLES2((GLADloadfunc)SDL_GL_GetProcAddress);
+#  else
+	gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress);
+#  endif
 #endif
 
 	SDL_GL_SetSwapInterval(1);
@@ -252,9 +249,11 @@ str ReadEntireFile(const char *name)
 	return out;
 }
 
-GameApi GAME_API = {
-	.init = InitPlatform,
-	.loop = Loop,
-	.finalize = Finalize,
-	.running = true,
-};
+int main(int argc, char *argv[]) {
+	Game *game = InitPlatform();
+	while (running) {
+		Loop(game);
+	}
+	Finalize(game);
+	return 0;
+}

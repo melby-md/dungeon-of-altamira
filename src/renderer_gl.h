@@ -36,7 +36,6 @@ struct Renderer {
 
 void RendererInit(Renderer *, Arena);
 void RendererResize(Renderer *renderer, int, int);
-void RendererEnableDebugLogs(void);
 
 void BeginRender(Renderer *);
 void EndRender(Renderer *);

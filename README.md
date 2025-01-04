@@ -32,11 +32,12 @@ If `sdl2-config` isn't in your path, run:
 
     make SDL_CONFIG=/PATH/TO/sdl2-config
 
-To force a build with hotreload support, run:
+To force a build with OpenGL ES:
 
-    make HOT_RELOAD=1
+    make GL_ES=1
 
-To force one without set `HOT_RELOAD` to `0`.
+To use GLVND instead of glad (only on \*NIX):
 
-To run the game, execute `out/dungeon_hotreload` or `out/dungeon` in the same
-folder where `assets` is.
+    make GLVND=1
+
+To run the game, execute `out/dungeon` in the same folder where `assets` is.

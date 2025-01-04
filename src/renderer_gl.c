@@ -1,16 +1,7 @@
 #include <stddef.h> // offsetof
 
-#include "arena.h"
-#include "assets.h"
-#include "common.h"
-#include "config.h"
-#include "image.h"
-#include "platform.h"
-#include "renderer.h"
-#include "renderer_gl.h"
-
 #ifdef GLAD
-#  include "glad.h"
+#  include <glad/gl.h>
 #else
 #  ifdef GL_ES
 #    include <GLES3/gl3.h>
@@ -20,10 +11,19 @@
 #  endif
 #endif
 
+#include "arena.h"
+#include "assets.h"
+#include "common.h"
+#include "config.h"
+#include "image.h"
+#include "platform.h"
+#include "renderer.h"
+#include "renderer_gl.h"
+
 #ifdef GL_ES
-static char shader_header[] = "#version 330 core\n";
-#else
 static char shader_header[] = "#version 300 es\n";
+#else
+static char shader_header[] = "#version 330 core\n";
 #endif
 
 #define LOG_SIZE 1024
@@ -272,21 +272,6 @@ void RendererResize(Renderer *renderer, int width, int height)
 	renderer->width = width;
 	renderer->height = height;
 }
-
-#ifndef GL_ES
-static void debugCallback(GLenum source, GLenum type, u32 id, GLenum severity, GLsizei len, const char *message, const void *userParam)
-{
-	Log("GL: %s", message);
-}
-
-void RendererEnableDebugLogs(void)
-{
-	Log("GL Debug messages enabled");
-	glEnable(GL_DEBUG_OUTPUT);
-	glDebugMessageCallback(debugCallback, NULL);
-	//glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
-}
-#endif
 
 static u32 LoadTexture(int asset)
 {

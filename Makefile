@@ -15,65 +15,48 @@ WARNINGS ?= -Wall -Wextra -pedantic -Wvla -Wshadow -Wconversion \
 	   -Wdouble-promotion -Wno-sign-conversion -Wno-unused-parameter \
 	   -Wno-unused-variable -Wno-unused-function -Werror
 
-DIR ?= out
-
 ifeq ($(OS),Windows_NT)
-	USE_GLAD = 1
-	HOT_RELOAD = 0
 	EXE = .exe
 endif
 
-USE_GLAD ?= 1
-HOT_RELOAD ?= 1
-OBJ = $(DIR)/arena.o $(DIR)/assets.o $(DIR)/game.o $(DIR)/platform_sdl2.o $(DIR)/renderer_gl.o $(DIR)/image.o
+GLVND ?= 0
 
-ifeq ($(USE_GLAD),1)
-	CPPFLAGS += -DGLAD
-	OBJ += $(DIR)/glad.o
-else
+OBJ = out/arena.o out/assets.o out/game.o out/platform_sdl2.o out/renderer_gl.o out/image.o out/glad.o
+
+ifeq ($(GL_ES),1)
+	CPPFLAGS += -DGL_ES
+endif
+
+ifeq ($(GLVND),1)
 	ifeq ($(GL_ES),1)
-		CPPFLAGS += -DGL_ES
 		LDLIBS += -lGLESv2
 	else
 		LDLIBS += -lOpenGL
 	endif
-endif
-
-ifeq ($(HOT_RELOAD),1)
-	LDLIBS += -ldl
-	TARGET = $(DIR)/dungeon_hotreload$(EXE) $(DIR)/dungeon.so
 else
-	TARGET = $(DIR)/dungeon$(EXE)
-	OBJ += $(DIR)/main.o
+	CPPFLAGS += -DGLAD
 endif
 
-all: $(TARGET)
 
-$(DIR)/dungeon_hotreload$(EXE): $(DIR)/glad.o src/unix_hotreload.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -D'GAME_LIBRARY="./$(DIR)/dungeon.so"' $(LDFLAGS) -o $@ $^ $(LDLIBS)
+all: out/dungeon$(EXE)
 
-$(DIR)/dungeon.so: $(OBJ)
-	$(CC) -shared -o $@ $(OBJ)
-
-$(DIR)/dungeon$(EXE): $(OBJ)
+out/dungeon$(EXE): $(OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
 
-$(DIR)/%.o: src/%.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -fPIC -c -o $@ $<
+out/%.o: src/%.c | out
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-$(DIR)/image.o: WARNINGS = 
-$(DIR)/glad.o: WARNINGS =
-$(DIR)/glad.o: third-party/glad.c 
-	$(CC) $(CFLAGS) $(CPPFLAGS) -fPIC -c -o $@ $<
+out/image.o: WARNINGS = 
+out/glad.o: WARNINGS =
+out/glad.o: third-party/gl.c | out
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-$(OBJ): | $(DIR)
-
-$(DIR):
+out:
 	mkdir -p $@
 
 clean:
-	rm -rf $(DIR)
+	rm -rf out
 
--include $(DIR)/*.d
+-include out/*.d
 
-.PHONY: clean
+.PHONY: clean all
