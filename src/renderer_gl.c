@@ -296,9 +296,43 @@ static u32 LoadTexture(int asset)
 	return texture;
 }
 
+void debugOutput(
+	GLenum source, 
+	GLenum type, 
+	unsigned int id, 
+	GLenum severity, 
+	GLsizei length, 
+	const char *message, 
+	const void *userParam
+)
+{
+	Log("GL: %s", message);
+}
+
 void RendererInit(Renderer *renderer, Arena temp)
 {
 	Log("OpenGL Version: %s", glGetString(GL_VERSION));
+
+	// TODO: Figure out debug messages on GL ES or remove non GLAD builds
+#if defined(DEBUG) && (!defined(GL_ES) || defined(GLAD))
+	int flags;
+	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+	{
+		Log("GL: Debug output enabled");
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); 
+		glDebugMessageCallback(debugOutput, NULL);
+		glDebugMessageControl(
+			GL_DONT_CARE, 
+			GL_DONT_CARE, 
+			GL_DONT_CARE,
+			0,
+			NULL,
+			GL_TRUE
+		); 
+	} 
+#endif
 
 	memset(renderer->transform, 0, sizeof(mat4));
 	renderer->transform[0]  =  2.0f / ((float)CANVAS_WIDTH / (float)SPRITE_DIMENSION);

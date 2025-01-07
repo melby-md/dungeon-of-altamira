@@ -141,7 +141,6 @@ NORETURN void Panic(const char *msg)
 {
 	ErrorStr(msg);
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "An error ocurred", msg, NULL);
-	Break();
 	exit(1);
 }
 
@@ -187,7 +186,6 @@ Game *InitPlatform(void)
 		Panic(SDL_GetError());
 
 	Log("Video Driver: %s", SDL_GetCurrentVideoDriver());
-
 #ifdef GL_ES
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -196,6 +194,10 @@ Game *InitPlatform(void)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+#endif
+
+#ifdef DEBUG
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 #endif
 
 	u32 window_flags = SDL_WINDOW_OPENGL;
