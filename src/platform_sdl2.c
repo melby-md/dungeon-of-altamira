@@ -235,7 +235,12 @@ Game *InitPlatform(void)
 	Arena arena;
 	ArenaInit(&arena, game->memory, memorySize);
 
-	RendererInit(&game->renderer, arena);
+	bool gl_debug = false;
+#ifdef DEBUG
+	gl_debug = SDL_GL_ExtensionSupported("GL_KHR_debug");
+#endif
+
+	RendererInit(&game->renderer, arena, gl_debug);
 	resize(game);
 
 	game->lastUpdate = SDL_GetPerformanceCounter();

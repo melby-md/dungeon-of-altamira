@@ -309,7 +309,7 @@ void debugOutput(
 	Log("GL: %s", message);
 }
 
-void RendererInit(Renderer *renderer, Arena temp)
+void RendererInit(Renderer *renderer, Arena temp, bool gl_debug)
 {
 	Log("OpenGL Version: %s", glGetString(GL_VERSION));
 
@@ -319,6 +319,10 @@ void RendererInit(Renderer *renderer, Arena temp)
 	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
 	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
 	{
+		Log("GL: Debug context enabled");
+	} 
+
+	if (gl_debug) {
 		Log("GL: Debug output enabled");
 		glEnable(GL_DEBUG_OUTPUT);
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); 
@@ -331,7 +335,7 @@ void RendererInit(Renderer *renderer, Arena temp)
 			NULL,
 			GL_TRUE
 		); 
-	} 
+	}
 #endif
 
 	memset(renderer->transform, 0, sizeof(mat4));
