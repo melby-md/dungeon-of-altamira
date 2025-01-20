@@ -4,7 +4,7 @@
 #  include <glad/gl.h>
 #else
 #  ifdef GL_ES
-#    include <GLES3/gl3.h>
+#    include <GLES3/gl32.h>
 #  else
 #    define GL_GLEXT_PROTOTYPES
 #    include <GL/gl.h>
@@ -313,8 +313,6 @@ void RendererInit(Renderer *renderer, Arena temp, bool gl_debug)
 {
 	Log("OpenGL Version: %s", glGetString(GL_VERSION));
 
-	// TODO: Figure out debug messages on GL ES or remove non GLAD builds
-#if defined(DEBUG) && (!defined(GL_ES) || defined(GLAD))
 	int flags;
 	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
 	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
@@ -336,7 +334,6 @@ void RendererInit(Renderer *renderer, Arena temp, bool gl_debug)
 			GL_TRUE
 		); 
 	}
-#endif
 
 	memset(renderer->transform, 0, sizeof(mat4));
 	renderer->transform[0]  =  2.0f / ((float)CANVAS_WIDTH / (float)SPRITE_DIMENSION);

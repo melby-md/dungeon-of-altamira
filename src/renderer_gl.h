@@ -34,7 +34,7 @@ struct Renderer {
 	Shadow shadow_buffer[SPRITE_BUFFER_CAPACITY];
 };
 
-void RendererInit(Renderer *, Arena);
+void RendererInit(Renderer *, Arena, bool);
 void RendererResize(Renderer *renderer, int, int);
 
 void BeginRender(Renderer *);

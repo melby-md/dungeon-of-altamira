@@ -21,6 +21,6 @@ void main(void)
 	float d = min(length(v_pos-u_light_pos), light_distance ) / light_distance;
 	d = pow(d,1.0);
 	vec4 color = texture(spritesheet, v_uv);
-	color.rgb *= (1.0-d) * light_intensity * light_color;
+	//color.rgb *= (1.0-d) * light_intensity * light_color;
 	f_color = color;
 } 
