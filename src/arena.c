@@ -30,9 +30,9 @@ void *alloc(Arena *a, size length, size align)
     return p;
 }
 
-str StringDup(Arena *a, str src)
+Str StringDup(Arena *a, Str src)
 {
-	str dst;
+	Str dst;
 
 	dst.length = src.length;
 	dst.data = AllocArray(a, unsigned char, dst.length);

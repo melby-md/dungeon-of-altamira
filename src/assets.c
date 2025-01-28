@@ -7,7 +7,7 @@ char *AssetFileName[] = {
 #undef X
 };
 
-str AssetRead(int asset)
+Str AssetRead(int asset)
 {
 	return ReadEntireFile(AssetFileName[asset]);
 }

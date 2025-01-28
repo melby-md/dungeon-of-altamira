@@ -17,6 +17,6 @@ enum assets {
 };
 
 
-str AssetRead(int);
+Str AssetRead(int);
 
 #endif

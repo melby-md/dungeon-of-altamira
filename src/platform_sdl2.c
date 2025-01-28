@@ -116,13 +116,13 @@ void Loop(Game *game)
 	u8 down  = game->keyboard_state[SDL_SCANCODE_S] || game->keyboard_state[SDL_SCANCODE_DOWN];
 	u8 right = game->keyboard_state[SDL_SCANCODE_D] || game->keyboard_state[SDL_SCANCODE_RIGHT];
 
-	vec2 unnormalized = vec2(
+	Vec2 unnormalized = (Vec2){
 		(float)(right - left),
 		(float)(down - up)
-	);
+	};
 
 	if (unnormalized.x != 0.f || unnormalized.y != 0.f)
-		controls.direction = vec2_divf(unnormalized, sqrtf(vec2_dot(unnormalized, unnormalized)));
+		controls.direction = Vec2Normalize(unnormalized);
 
 	u64 current = SDL_GetPerformanceCounter();
 	float dt = (float)(current - game->lastUpdate) / (float)SDL_GetPerformanceFrequency();
@@ -249,9 +249,9 @@ Game *InitPlatform(void)
 	return game;
 }
 
-str ReadEntireFile(const char *name)
+Str ReadEntireFile(const char *name)
 {
-	str out;
+	Str out;
 	out.data = SDL_LoadFile(name, (size_t *)&out.length);
 	return out;
 }

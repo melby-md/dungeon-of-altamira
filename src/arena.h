@@ -11,7 +11,7 @@ typedef struct Arena {
 } Arena;
 
 Arena AllocTempArena(Arena *);
-str StringDup(Arena *, str);
+Str StringDup(Arena *, Str);
 void ArenaInit(Arena *, char *, size);
 
 void *alloc(Arena *, size, size);

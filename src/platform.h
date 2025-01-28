@@ -3,10 +3,10 @@
 #include "common.h"
 
 typedef struct Controls {
-	vec2 direction;
+	Vec2 direction;
 } Controls;
 
 void RequestExit(void);
 void Panic(const char *);
-str  ReadEntireFile(const char *);
+Str  ReadEntireFile(const char *);
 #endif

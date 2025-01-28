@@ -30,7 +30,7 @@ static char shader_header[] = "#version 330 core\n";
 
 static u32 compileShader(int src, GLenum type)
 {
-	str file = AssetRead(src);
+	Str file = AssetRead(src);
 
 	char *src_arr[] = {
 		shader_header,
@@ -38,7 +38,7 @@ static u32 compileShader(int src, GLenum type)
 	};
 
 	s32 length_arr[] = {
-		(s32)str_length(shader_header),
+		(s32)StrLength(shader_header),
 		(s32)file.length
 	};
 
@@ -83,7 +83,7 @@ static u32 createProgram(int vertex_src, int fragment_src)
 	return shader;
 }
 
-static void pushQuad(Renderer *renderer, vec2 pos, int id) {
+static void pushQuad(Renderer *renderer, Vec2 pos, int id) {
 	QuadVertex *quad = renderer->sprite_buffer[renderer->sprite_buffer_length++];
 
 	// TODO: Maybe use a LUT?
@@ -130,7 +130,7 @@ void BeginStaticTiles(Renderer *renderer)
 	renderer->shadow_buffer_length = 0;
 }
 
-void PushTile(Renderer *renderer, vec2 pos, int id)
+void PushTile(Renderer *renderer, Vec2 pos, int id)
 {
 	if (renderer->sprite_buffer_length >= SPRITE_BUFFER_CAPACITY)
 		Panic("Too much tiles");
@@ -138,7 +138,7 @@ void PushTile(Renderer *renderer, vec2 pos, int id)
 	pushQuad(renderer, pos, id);
 }
 
-void PushShadow(Renderer *renderer, vec2 p1, vec2 p2)
+void PushShadow(Renderer *renderer, Vec2 p1, Vec2 p2)
 {
 	if (renderer->shadow_buffer_length >= SPRITE_BUFFER_CAPACITY)
 		Panic("Shdows");
@@ -204,17 +204,16 @@ static void flushQuads(Renderer *renderer)
 	renderer->sprite_buffer_length = 0;
 }
 
-void BeginCamera(Renderer *renderer, vec2 camera)
+void BeginCamera(Renderer *renderer, Vec2 camera)
 {
-	camera = vec2_addf(camera, .5f);
+	camera = Vec2Add(camera, (Vec2){.5f, .5f});
 
 	glUseProgram(renderer->quad_shader);
 
-	renderer->transform[12] = -camera.x*renderer->transform[0];
-	renderer->transform[13] = -camera.y*renderer->transform[5];
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), renderer->transform);
-	float pos[2] = {camera.x, camera.y};
-	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4), sizeof(pos), pos);
+	renderer->ubo.transform[3][0] = -camera.x*renderer->ubo.transform[0][0];
+	renderer->ubo.transform[3][1] = -camera.y*renderer->ubo.transform[1][1];
+	renderer->ubo.light_pos = camera;
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UBO), &renderer->ubo);
 
 	glBindVertexArray(renderer->static_tiles_vao);
 	glDrawElements(GL_TRIANGLES, renderer->static_tiles_length, GL_UNSIGNED_INT, 0);
@@ -222,7 +221,7 @@ void BeginCamera(Renderer *renderer, vec2 camera)
 	glBindVertexArray(renderer->sprite_vao);
 }
 
-void DrawSprite(Renderer *renderer, vec2 pos, int id)
+void DrawSprite(Renderer *renderer, Vec2 pos, int id)
 {
 	if (renderer->sprite_buffer_length >= SPRITE_BUFFER_CAPACITY)
 		flushQuads(renderer);
@@ -282,7 +281,7 @@ static u32 LoadTexture(int asset)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	str file = AssetRead(asset);
+	Str file = AssetRead(asset);
 
 	int height, width;
 	unsigned char *data = ImageDecode(file.data, (int)file.length, &width, &height, 4);
@@ -335,10 +334,10 @@ void RendererInit(Renderer *renderer, Arena temp, bool gl_debug)
 		); 
 	}
 
-	memset(renderer->transform, 0, sizeof(mat4));
-	renderer->transform[0]  =  2.0f / ((float)CANVAS_WIDTH / (float)SPRITE_DIMENSION);
-	renderer->transform[5]  = -2.0f / ((float)CANVAS_HEIGHT / (float)SPRITE_DIMENSION);
-	renderer->transform[15] =  1.0f;
+	memset(renderer->ubo.transform, 0, sizeof(Mat4));
+	renderer->ubo.transform[0][0] =  2.0f / ((float)CANVAS_WIDTH / (float)SPRITE_DIMENSION);
+	renderer->ubo.transform[1][1] = -2.0f / ((float)CANVAS_HEIGHT / (float)SPRITE_DIMENSION);
+	renderer->ubo.transform[3][3] =  1.0f;
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -359,9 +358,7 @@ void RendererInit(Renderer *renderer, Arena temp, bool gl_debug)
 	}
 	glUniformBlockBinding(shadow_shader, ubo_binding, 0);
 
-	// sizeof(mat4) + sizeof(vec2)
-	// no need for padding
-	static const size ubo_length = 72;
+	const size ubo_length = sizeof(UBO);
 	u32 ubo;
 	glGenBuffers(1, &ubo);
 	glBindBuffer(GL_UNIFORM_BUFFER, ubo);

@@ -6,11 +6,11 @@
 #include "arena.h"
 
 typedef struct AABB {
-	vec2 min, max;
+	Vec2 min, max;
 } AABB;
 
 typedef struct Entity {
-	vec2 pos;
+	Vec2 pos;
 	AABB box;
 } Entity;
 
@@ -29,11 +29,11 @@ enum sprites {
 	ZOMBIE
 };
 
-AABB translateBox(vec2 pos, AABB box)
+AABB translateBox(Vec2 pos, AABB box)
 {
 	return (AABB){
-		vec2_add(box.min, pos),
-		vec2_add(box.max, pos)
+		Vec2Add(box.min, pos),
+		Vec2Add(box.max, pos)
 	};
 }
 
@@ -70,9 +70,9 @@ void Update(GameState *state, Controls controls, float dt)
 {
 	// TODO: Better collision
 	if (controls.direction.x != 0.f || controls.direction.y != 0.f) {
-		vec2 movement = vec2_mulf(controls.direction, dt * 1.8f);
+		Vec2 movement = Vec2Scale(controls.direction, (dt * 1.8f));
 
-		vec2 old = state->player.pos;
+		Vec2 old = state->player.pos;
 		state->player.pos.x += movement.x;
 		if (colisionAgainstTileMap(&state->player, state))
 			state->player.pos = old;
@@ -94,7 +94,7 @@ void Render(GameState *state, Renderer *renderer)
 GameState *InitGame(Arena *arena, Renderer *renderer)
 {
 	GameState *state = Alloc(arena, GameState);
-	state->player.pos = vec2(0.f, 0.f);
+	state->player.pos = (Vec2){0.f, 0.f};
 	state->player.box = (AABB){
 		{.18f, 0.f},
 		{.81f, 1.f}
@@ -113,9 +113,9 @@ GameState *InitGame(Arena *arena, Renderer *renderer)
 	for (int i = 0; i < state->dungeon_height; i++)
 		for (int j = 0; j < state->dungeon_width; j++) {
 			int id = state->dungeon[i*state->dungeon_width + j];
-			PushTile(renderer, vec2((float)j, (float)i), id);
+			PushTile(renderer, (Vec2){(float)j, (float)i}, id);
 		}
-	PushShadow(renderer, vec2(1.f, 1.f), vec2(2.f, 1.f));
+	PushShadow(renderer, (Vec2){1.f, 1.f}, (Vec2){2.f, 1.f});
 	EndStaticTiles(renderer);
 
 	return state;

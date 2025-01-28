@@ -56,48 +56,41 @@ typedef int32_t   s32;
 typedef int16_t   s16;
 typedef int8_t    s8;
 
-typedef struct str {
+typedef struct Str {
 	size length;
 	unsigned char *data;
-} str;
+} Str;
 
-#define str_length(x) (countof(x)-1)
-#define str(s) ((str){str_length(s)-1, (unsigned char *)(s)})
+#define StrLength(x) (countof(x)-1)
+#define Str(s) ((str){StrLength(s)-1, (unsigned char *)(s)})
 
-typedef struct {
+typedef struct Vec3 {
+	float x, y, z;
+} Vec3;
+
+typedef struct Vec2 {
 	float x, y;
-} vec2;
+} Vec2;
 
-#define vec2(x, y) ((vec2){(x), (y)})
-
-static inline vec2 vec2_add(vec2 a, vec2 b)
+static inline Vec2 Vec2Add(Vec2 a, Vec2 b)
 {
-	return (vec2){a.x + b.x, a.y + b.y};
+	return (Vec2){a.x + b.x, a.y + b.y};
 }
 
-static inline vec2 vec2_addf(vec2 v, float f)
+static inline Vec2 Vec2Sub(Vec2 a, Vec2 b)
 {
-	return (vec2){v.x + f, v.y + f};
+	return (Vec2){a.x - b.x, a.y - b.y};
 }
 
-static inline vec2 vec2_sub(vec2 a, vec2 b)
+static inline Vec2 Vec2Scale(Vec2 v, float f)
 {
-	return (vec2){a.x - b.x, a.y - b.y};
+	return (Vec2){v.x * f, v.y * f};
 }
 
-static inline vec2 vec2_mulf(vec2 v, float f)
+static inline Vec2 Vec2Normalize(Vec2 v)
 {
-	return (vec2){v.x * f, v.y * f};
-}
-
-static inline vec2 vec2_divf(vec2 v, float f)
-{
-	return (vec2){v.x / f, v.y / f};
-}
-
-static inline float vec2_dot(vec2 a, vec2 b)
-{
-	return a.x*b.x + a.y*b.y;
+	float length = sqrtf(v.x * v.x + v.y * v.y);
+	return (Vec2){v.x / length, v.y / length};
 }
 
 #endif
