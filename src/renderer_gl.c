@@ -182,7 +182,7 @@ void EndStaticTiles(Renderer *renderer)
 		GL_ARRAY_BUFFER,
 		0,
 		shadow_length * sizeof(Shadow),
-		(void *)renderer->shadow_buffer
+		renderer->shadow_buffer
 	);
 	renderer->shadow_buffer_length = shadow_length * 6;
 
@@ -196,7 +196,7 @@ static void flushQuads(Renderer *renderer)
 		GL_ARRAY_BUFFER,
 		0,
 		length * sizeof(Quad),
-		(void *)renderer->sprite_buffer
+		renderer->sprite_buffer
 	);
 
 	glDrawElements(GL_TRIANGLES, length * 6, GL_UNSIGNED_INT, 0);
