@@ -241,35 +241,23 @@ void EndCamera(Renderer *renderer)
 
 void BeginRender(Renderer *renderer)
 {
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, renderer->framebuffer);
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void EndRender(Renderer *renderer)
 {
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glBlitFramebuffer(
-		0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
-		renderer->left, renderer->top, renderer->right, renderer->bottom,
-		GL_COLOR_BUFFER_BIT, GL_NEAREST
-	);
 }
 
 void RendererResize(Renderer *renderer, int width, int height)
 {
-	// TODO: solve letterbox issues
-	int scale_factor = (width / CANVAS_WIDTH);
-	int letterbox_x = (width % CANVAS_WIDTH)/2;
-	int letterbox_y = (height % CANVAS_HEIGHT)/2;
+	glViewport(0, 0, width, height);
 
-	renderer->left = letterbox_x;
-	renderer->top = letterbox_y;
-	renderer->right = letterbox_x + CANVAS_WIDTH * scale_factor;
-	renderer->bottom = letterbox_y + CANVAS_HEIGHT * scale_factor;
+	float height_in_tiles = (float)CANVAS_HEIGHT / (float)SPRITE_DIMENSION;
 
-	renderer->width = width;
-	renderer->height = height;
+	float ratio = (float)width / (float)height;
+
+	renderer->ubo.transform[0][0] =  2.0f / height_in_tiles / ratio;
+	renderer->ubo.transform[1][1] = -2.0f / height_in_tiles;
 }
 
 static u32 LoadTexture(int asset)
@@ -335,8 +323,6 @@ void RendererInit(Renderer *renderer, Arena temp, bool gl_debug)
 	}
 
 	memset(renderer->ubo.transform, 0, sizeof(Mat4));
-	renderer->ubo.transform[0][0] =  2.0f / ((float)CANVAS_WIDTH / (float)SPRITE_DIMENSION);
-	renderer->ubo.transform[1][1] = -2.0f / ((float)CANVAS_HEIGHT / (float)SPRITE_DIMENSION);
 	renderer->ubo.transform[3][3] =  1.0f;
 
 	glEnable(GL_BLEND);
@@ -433,30 +419,12 @@ void RendererInit(Renderer *renderer, Arena temp, bool gl_debug)
 	// Loading textures
 	u32 spritesheet = LoadTexture(ASSET_SPRITESHEET);
 
-	// Creating framebuffer
-	u32 framebuffer;
-	glGenFramebuffers(1, &framebuffer);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
-	u32 framebuffer_color;
-	glGenTextures(1, &framebuffer_color);
-	glBindTexture(GL_TEXTURE_2D, framebuffer_color);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, CANVAS_WIDTH, CANVAS_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer_color, 0);
-
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		Panic("Error while creating framebuffer");
-
-	glViewport(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 	glClearColor(0.f, 0.f, 0.f, 1.f);
 
 	glBindTexture(GL_TEXTURE_2D, spritesheet);
 
 	renderer->quad_shader = quad_shader;
 	renderer->shadow_shader = shadow_shader;
-	renderer->framebuffer = framebuffer;
 	renderer->sprite_vao = sprite_vao;
 	renderer->sprite_vbo = sprite_vbo;
 	renderer->static_tiles_vbo = static_tiles_vbo;

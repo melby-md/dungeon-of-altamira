@@ -24,12 +24,10 @@ typedef struct UBO {
 } UBO;
 
 struct Renderer {
-	u32 framebuffer, sprite_vbo, sprite_vao, static_tiles_vao,
-	    static_tiles_vbo, shadow_vbo, shadow_vao, quad_shader, shadow_shader;
+	u32 sprite_vbo, sprite_vao, static_tiles_vao, static_tiles_vbo,
+	    shadow_vbo, shadow_vao, quad_shader, shadow_shader;
 
 	UBO ubo;
-
-	int width, height, top, left, right, bottom;
 
 	s32 static_tiles_length;
 	s32 sprite_buffer_length;

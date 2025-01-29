@@ -1,4 +1,3 @@
-static const int CANVAS_WIDTH = 320;
 static const int CANVAS_HEIGHT = 180;
 
 // SPRITESHEET_COLUMNS = 1 << SPRITESHEET_COLUMNS_EXP
