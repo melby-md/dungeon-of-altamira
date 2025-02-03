@@ -208,10 +208,9 @@ void BeginCamera(Renderer *renderer, Vec2 camera)
 {
 	camera = Vec2Add(camera, (Vec2){.5f, .5f});
 
-	glUseProgram(renderer->quad_shader);
+	glUseProgram(renderer->quad_program);
 
-	renderer->ubo.transform[3][0] = -camera.x*renderer->ubo.transform[0][0];
-	renderer->ubo.transform[3][1] = -camera.y*renderer->ubo.transform[1][1];
+	renderer->ubo.translate = camera;
 	renderer->ubo.light_pos = camera;
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UBO), &renderer->ubo);
 
@@ -233,7 +232,7 @@ void EndCamera(Renderer *renderer)
 {
 	flushQuads(renderer);
 
-	glUseProgram(renderer->shadow_shader);
+	glUseProgram(renderer->shadow_program);
 
 	glBindVertexArray(renderer->shadow_vao);
 	glDrawElements(GL_TRIANGLES, renderer->shadow_buffer_length, GL_UNSIGNED_INT, 0);
@@ -334,29 +333,27 @@ void RendererInit(Renderer *renderer, Arena temp, bool gl_debug)
 		); 
 	}
 
-	memset(renderer->ubo.transform, 0, sizeof(Mat4));
-	renderer->ubo.transform[0][0] =  2.0f / ((float)CANVAS_WIDTH / (float)SPRITE_DIMENSION);
-	renderer->ubo.transform[1][1] = -2.0f / ((float)CANVAS_HEIGHT / (float)SPRITE_DIMENSION);
-	renderer->ubo.transform[3][3] =  1.0f;
+	renderer->ubo.scale.x =  2.0f / ((float)CANVAS_WIDTH / (float)SPRITE_DIMENSION);
+	renderer->ubo.scale.y = -2.0f / ((float)CANVAS_HEIGHT / (float)SPRITE_DIMENSION);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// Compiling and checking shaders
-	u32 quad_shader = createProgram(ASSET_QUAD_VERTEX_SHADER, ASSET_QUAD_FRAGMENT_SHADER);
-	u32 shadow_shader = createProgram(ASSET_SHADOW_VERTEX_SHADER, ASSET_SHADOW_FRAGMENT_SHADER);
+	u32 quad_program = createProgram(ASSET_QUAD_VERTEX_SHADER, ASSET_QUAD_FRAGMENT_SHADER);
+	u32 shadow_program = createProgram(ASSET_SHADOW_VERTEX_SHADER, ASSET_SHADOW_FRAGMENT_SHADER);
 
-	s32 ubo_binding = glGetUniformBlockIndex(quad_shader, "UBO");
+	s32 ubo_binding = glGetUniformBlockIndex(quad_program, "UBO");
 	if (ubo_binding == -1) {
 		Panic("Shader: no uniform block named \"UBO\"");
 	}
-	glUniformBlockBinding(quad_shader, ubo_binding, 0);
+	glUniformBlockBinding(quad_program, ubo_binding, 0);
 
-	ubo_binding = glGetUniformBlockIndex(shadow_shader, "UBO");
+	ubo_binding = glGetUniformBlockIndex(shadow_program, "UBO");
 	if (ubo_binding == -1) {
 		Panic("Shader: no uniform block named \"UBO\"");
 	}
-	glUniformBlockBinding(shadow_shader, ubo_binding, 0);
+	glUniformBlockBinding(shadow_program, ubo_binding, 0);
 
 	const size ubo_length = sizeof(UBO);
 	u32 ubo;
@@ -454,8 +451,8 @@ void RendererInit(Renderer *renderer, Arena temp, bool gl_debug)
 
 	glBindTexture(GL_TEXTURE_2D, spritesheet);
 
-	renderer->quad_shader = quad_shader;
-	renderer->shadow_shader = shadow_shader;
+	renderer->quad_program = quad_program;
+	renderer->shadow_program = shadow_program;
 	renderer->framebuffer = framebuffer;
 	renderer->sprite_vao = sprite_vao;
 	renderer->sprite_vbo = sprite_vbo;

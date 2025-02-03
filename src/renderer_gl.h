@@ -4,8 +4,6 @@
 
 #define SPRITE_BUFFER_CAPACITY 1024
 
-typedef float Mat4[4][4];
-
 typedef struct QuadVertex {
 	Vec2 pos;
 	Vec2 uv;
@@ -19,13 +17,14 @@ typedef QuadVertex Quad[4];
 typedef ShadowVertex Shadow[4];
 
 typedef struct UBO {
-	Mat4 transform;
+	Vec2 translate;
+	Vec2 scale;
 	Vec2 light_pos;
 } UBO;
 
 struct Renderer {
 	u32 framebuffer, sprite_vbo, sprite_vao, static_tiles_vao,
-	    static_tiles_vbo, shadow_vbo, shadow_vao, quad_shader, shadow_shader;
+	    static_tiles_vbo, shadow_vbo, shadow_vao, quad_program, shadow_program;
 
 	UBO ubo;
 
